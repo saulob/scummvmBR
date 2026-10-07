@@ -3126,6 +3126,43 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GF_TALKIE | GF_MT32_XMIDI | GF_MT32_TRACK10_FIX
 	},
 
+	// === INICIO entrada pt-BR (aplicar_entrada_deteccao.py) ===
+	// Mesma edicao da entrada em ingles acima, rodando com a traducao pt-BR.
+	//
+	// Sem md5 e sem tamanho DE PROPOSITO (nullptr + AD_NO_SIZE): a ferramenta
+	// de traducao reescreve SIMON2.GME e GSPTR30 a cada reimport, e qualquer
+	// md5 fixado aqui ficaria obsoleto na hora. Quando a deteccao falha, o
+	// detection_fallback.h assume e crava kPlatformDOS; dai midi.cpp escolhe o
+	// parser XMIDI em vez do MidiParser_SimonWin, a musica nao carrega e o jogo
+	// trava no assert(_parent) de audio/audiostream.cpp.
+	//
+	// O que amarra esta entrada e o IDIOMA, nao os bytes: so casa quando o
+	// target esta com language=br no scummvm.ini.
+	{
+		{
+			"simon2",
+			"25th Anniversary Edition",
+
+			{
+				{ "gsptr30",       GAME_BASEFILE, nullptr, AD_NO_SIZE },
+				{ "icon.dat",      GAME_ICONFILE, nullptr, AD_NO_SIZE },
+				{ "simon2.gme",    GAME_GMEFILE, nullptr, AD_NO_SIZE },
+				{ "stripped.txt",  GAME_STRFILE, nullptr, AD_NO_SIZE },
+				{ "tbllist",       GAME_TBLFILE, nullptr, AD_NO_SIZE },
+				AD_LISTEND
+			},
+			Common::PT_BRA,
+			Common::kPlatformWindows,
+			ADGF_CD,
+			GUIO1(GAMEOPTION_DISABLE_FADE_EFFECTS)
+		},
+
+		GType_SIMON2,
+		GID_SIMON2,
+		GF_TALKIE | GF_MT32_XMIDI | GF_MT32_TRACK10_FIX
+	},
+	// === FIM entrada pt-BR ===
+
 	// Simon the Sorcerer 2 - German with MT-32 hack (25th Anniversary Edition)
 	{
 		{

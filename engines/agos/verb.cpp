@@ -135,6 +135,21 @@ static const char *const english_verb_names[] = {
 	"Give"
 };
 
+static const char *const portuguese_verb_names[] = {
+	"Ir para",
+	"Olhar",
+	"Abrir",
+	"Mover",
+	"Consumir",
+	"Pegar",
+	"Fechar",
+	"Usar",
+	"Falar com",
+	"Tirar",
+	"Vestir",
+	"Dar"
+};
+
 static const char *const czech_verb_names[] = {
 	"Jit",
 	"Podivat se",
@@ -190,6 +205,12 @@ static const char *const english_verb_prep_names[] = {
 	"", "", "", "",
 	"", "", "", "with what ?",
 	"", "", "", "to whom ?"
+};
+
+static const char *const portuguese_verb_prep_names[] = {
+	"", "", "", "",
+	"", "", "", "com o qu\x89 ?",
+	"", "", "", "para quem ?"
 };
 
 static const char *const czech_verb_prep_names[] = {
@@ -281,6 +302,9 @@ void AGOSEngine::printVerbOf(uint hitarea_id) {
 		case Common::DE_DEU:
 			verb_prep_names = german_verb_prep_names;
 			break;
+		case Common::PT_BRA:
+			verb_prep_names = portuguese_verb_prep_names;
+			break;
 		case Common::CS_CZE:
 			verb_prep_names = czech_verb_prep_names;
 			break;
@@ -309,6 +333,9 @@ void AGOSEngine::printVerbOf(uint hitarea_id) {
 			break;
 		case Common::DE_DEU:
 			verb_names = german_verb_names;
+			break;
+		case Common::PT_BRA:
+			verb_names = portuguese_verb_names;
 			break;
 		case Common::CS_CZE:
 			verb_names = czech_verb_names;
