@@ -310,7 +310,7 @@ void AGOSEngine::windowPutChar(WindowBlock *window, byte c, byte b) {
 
 		if (_language == Common::JA_JPN && !_forceAscii)
 			textColumnWidth = width = 4;
-		else if (c - 32 > 98) // Ignore invalid characters
+		else if (c - 32 > 98 && _language != Common::PT_BRA) // Ignore invalid characters (pt-BR tem glifos ate 255)
 			return;
 
 		if (window->textLength == window->textMaxLength) {
