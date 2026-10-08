@@ -46,6 +46,7 @@ class DefaultEventManager : public Common::EventManager, Common::EventObserver {
 	Common::ArtificialEventSource _artificialEventSource;
 
 	Common::Queue<Common::Event> _eventQueue;
+	void waitForPauseResume();
 	bool notifyEvent(const Common::Event &ev) override {
 		_eventQueue.push(ev);
 		return true;

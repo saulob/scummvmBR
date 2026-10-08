@@ -15,6 +15,7 @@ Default shortcuts are shown in the table.
 
         Shortcut, Description
         :kbd:`Ctrl+F5` ,Displays the Global Main Menu
+        :kbd:`Ctrl+Space` or :kbd:`Pause/Break` ,Pauses/resumes the game without displaying a menu; press :kbd:`Esc` to resume
         :kbd:`Cmd+q` ,Quit (macOS)
         :kbd:`Ctrl+q` ,Quit (Linux/Unix)
         :kbd:`Alt+F4`,Quit (Windows)

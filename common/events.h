@@ -125,6 +125,9 @@ enum EventType {
 	EVENT_HOTSPOTS_SHOW = 38,
 	EVENT_HOTSPOTS_HIDE = 39,
 
+	/** Toggle pausing the current game. */
+	EVENT_TOGGLE_PAUSE = 40,
+
 	/**
 	 * We reserve some event ids for custom events.
 	 * 

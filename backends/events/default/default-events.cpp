@@ -26,6 +26,7 @@
 #include "common/system.h"
 #include "common/config-manager.h"
 #include "common/translation.h"
+#include "common/str.h"
 #include "backends/events/default/default-events.h"
 #include "backends/keymapper/action.h"
 #include "backends/keymapper/keymapper.h"
@@ -33,6 +34,9 @@
 #include "backends/vkeybd/virtual-keyboard.h"
 
 #include "engines/engine.h"
+#include "graphics/font.h"
+#include "graphics/fontman.h"
+#include "graphics/surface.h"
 #include "gui/debugger.h"
 #include "gui/message.h"
 
@@ -77,6 +81,145 @@ void DefaultEventManager::init() {
 		_vk->loadKeyboardPack("vkeybd_default");
 	}
 #endif
+}
+
+void DefaultEventManager::waitForPauseResume() {
+	if (!g_engine || g_engine->isPaused())
+		return;
+
+	PauseToken pauseToken = g_engine->pauseEngine();
+	Common::KeymapArray enabledGameKeymaps;
+	for (Common::Keymap *keymap : _keymapper->getKeymaps()) {
+		if (keymap->getType() == Common::Keymap::kKeymapTypeGame && keymap->isEnabled()) {
+			keymap->setEnabled(false);
+			enabledGameKeymaps.push_back(keymap);
+		}
+	}
+
+	const bool overlayWasVisible = g_system->isOverlayVisible();
+	if (!overlayWasVisible) {
+		g_system->showOverlay(false);
+		g_system->clearOverlay();
+	}
+
+	const int16 overlayWidth = g_system->getOverlayWidth();
+	const int16 overlayHeight = g_system->getOverlayHeight();
+	const Graphics::PixelFormat overlayFormat = g_system->getOverlayFormat();
+	Graphics::Surface previousOverlay;
+	previousOverlay.create(overlayWidth, overlayHeight, overlayFormat);
+	g_system->grabOverlay(previousOverlay);
+
+	Graphics::Surface pauseOverlay;
+	pauseOverlay.copyFrom(previousOverlay);
+	const Graphics::Font *pauseFont = FontMan.getFontByUsage(Graphics::FontManager::kGUIFont);
+	const Common::String pauseMessage = "Jogo Pausado. Aperte ESC para continuar.";
+	const Common::Rect safeArea = g_system->getSafeOverlayArea();
+	if (pauseFont && pauseFont->getStringWidth(pauseMessage) > safeArea.width() - 16)
+		pauseFont = FontMan.getFontByUsage(Graphics::FontManager::kConsoleFont);
+
+	if (pauseFont) {
+		const int textY = safeArea.top + (safeArea.height() - pauseFont->getFontHeight()) / 2;
+		const uint32 textColor = overlayFormat.RGBToColor(255, 255, 255);
+		pauseFont->drawString(&pauseOverlay, pauseMessage, safeArea.left, textY, safeArea.width(),
+		                      textColor, Graphics::kTextAlignCenter);
+		g_system->copyRectToOverlay(pauseOverlay.getPixels(), pauseOverlay.pitch, 0, 0, overlayWidth, overlayHeight);
+	} else {
+		warning("Unable to display pause message because no GUI font is available");
+	}
+	g_system->updateScreen();
+
+	Common::Queue<Common::Event> deferredEvents;
+	bool escapePressed = false;
+
+	while (pauseToken.isActive()) {
+		_dispatcher.dispatch();
+
+		if (_eventQueue.empty()) {
+			g_system->delayMillis(10);
+			continue;
+		}
+
+		Common::Event pausedEvent = _eventQueue.pop();
+
+		if (pausedEvent.type == Common::EVENT_TOGGLE_PAUSE) {
+			pauseToken.clear();
+			continue;
+		}
+
+		if (pausedEvent.type == Common::EVENT_KEYDOWN || pausedEvent.type == Common::EVENT_KEYUP) {
+			_modifierState = pausedEvent.kbd.flags;
+			if (pausedEvent.kbd.keycode == Common::KEYCODE_ESCAPE) {
+				if (pausedEvent.type == Common::EVENT_KEYDOWN) {
+					escapePressed = true;
+					continue;
+				}
+				if (escapePressed) {
+					pauseToken.clear();
+					continue;
+				}
+			}
+		}
+
+		switch (pausedEvent.type) {
+		case Common::EVENT_MOUSEMOVE:
+			_mousePos = pausedEvent.mouse;
+			break;
+
+		case Common::EVENT_LBUTTONDOWN:
+			_mousePos = pausedEvent.mouse;
+			_buttonState |= LBUTTON;
+			break;
+
+		case Common::EVENT_LBUTTONUP:
+			_mousePos = pausedEvent.mouse;
+			_buttonState &= ~LBUTTON;
+			break;
+
+		case Common::EVENT_RBUTTONDOWN:
+			_mousePos = pausedEvent.mouse;
+			_buttonState |= RBUTTON;
+			break;
+
+		case Common::EVENT_RBUTTONUP:
+			_mousePos = pausedEvent.mouse;
+			_buttonState &= ~RBUTTON;
+			break;
+
+		case Common::EVENT_QUIT:
+		case Common::EVENT_RETURN_TO_LAUNCHER:
+			deferredEvents.push(pausedEvent);
+			pauseToken.clear();
+			break;
+
+		case Common::EVENT_INPUT_CHANGED:
+		case Common::EVENT_SCREEN_CHANGED:
+		case Common::EVENT_FOCUS_GAINED:
+		case Common::EVENT_FOCUS_LOST:
+		case Common::EVENT_DEBUGGER:
+		case Common::EVENT_DROP_FILE:
+		case Common::EVENT_CLIPBOARD_UPDATE:
+			deferredEvents.push(pausedEvent);
+			break;
+
+		default:
+			break;
+		}
+	}
+
+	for (Common::Keymap *keymap : enabledGameKeymaps)
+		keymap->setEnabled(true);
+
+	if (overlayWasVisible) {
+		g_system->copyRectToOverlay(previousOverlay.getPixels(), previousOverlay.pitch, 0, 0, overlayWidth, overlayHeight);
+	} else {
+		g_system->hideOverlay();
+	}
+	g_system->updateScreen();
+	pauseOverlay.free();
+	previousOverlay.free();
+
+	while (!deferredEvents.empty())
+		_eventQueue.push(deferredEvents.pop());
 }
 
 bool DefaultEventManager::pollEvent(Common::Event &event) {
@@ -166,6 +309,11 @@ bool DefaultEventManager::pollEvent(Common::Event &event) {
 			event.type = Common::EVENT_QUIT;
 		else if (_shouldReturnToLauncher)
 			event.type = Common::EVENT_RETURN_TO_LAUNCHER;
+		break;
+
+	case Common::EVENT_TOGGLE_PAUSE:
+		waitForPauseResume();
+		forwardEvent = false;
 		break;
 
 	case Common::EVENT_VIRTUAL_KEYBOARD:
@@ -350,6 +498,17 @@ Common::Keymap *DefaultEventManager::getGlobalKeymap() {
 	act->addDefaultInputMapping("C+F5");
 	act->addDefaultInputMapping("JOY_START");
 	act->setEvent(EVENT_MAINMENU);
+	globalKeymap->addAction(act);
+
+	act = new Action("PAUSE", _("Pause / resume game"));
+	act->addDefaultInputMapping("C+SPACE");
+	act->addDefaultInputMapping("PAUSE");
+	act->setEvent(EVENT_TOGGLE_PAUSE);
+	globalKeymap->addAction(act);
+
+	act = new Action("RESUME", _("Resume game"));
+	act->addDefaultInputMapping("ESCAPE");
+	act->setKeyEvent(KeyState(KEYCODE_ESCAPE, ASCII_ESCAPE));
 	globalKeymap->addAction(act);
 
 #ifndef ENABLE_VKEYBD
