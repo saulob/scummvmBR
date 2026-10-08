@@ -20,7 +20,10 @@
  */
 
 #include "common/scummsys.h"
+#include "common/str.h"
 #include "base/version.h"
+
+#include <cstring>
 
 #define INCLUDED_FROM_BASE_VERSION_CPP
 #include "base/internal_version.h"
@@ -86,6 +89,28 @@ const char gScummVMCompiler[] = ""
 	const char gScummVMFullVersion[] = "ScummVM " SCUMMVM_VERSION SCUMMVM_REVISION " (" __DATE__ " " __TIME__ ")";
 	const char gScummVMBuildDate[] = __DATE__ " " __TIME__;
 #endif
+
+const char *getScummVMBuildInfo() {
+	static const Common::String buildInfo = []() {
+		static const char *const months[] = {
+			"Jan", "Feb", "Mar", "Apr", "May", "Jun",
+			"Jul", "Aug", "Sep", "Oct", "Nov", "Dec"
+		};
+		int month = 0;
+		for (int i = 0; i < 12; ++i) {
+			if (strncmp(__DATE__, months[i], 3) == 0) {
+				month = i + 1;
+				break;
+			}
+		}
+
+		const int day = (__DATE__[4] == ' ' ? 0 : __DATE__[4] - '0') * 10 + __DATE__[5] - '0';
+		const int year = (__DATE__[7] - '0') * 1000 + (__DATE__[8] - '0') * 100 + (__DATE__[9] - '0') * 10 + __DATE__[10] - '0';
+		return Common::String::format("ScummVMBR (build %04d%02d%02d-%c%c%c%c)",
+			year, month, day, __TIME__[0], __TIME__[1], __TIME__[3], __TIME__[4]);
+	}();
+	return buildInfo.c_str();
+}
 
 const char gScummVMFeatures[] = ""
 #ifdef TAINTED_BUILD

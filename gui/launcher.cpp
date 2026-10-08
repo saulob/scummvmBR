@@ -257,10 +257,10 @@ void LauncherDialog::build() {
 		_logo = new GraphicsWidget(this, _title + ".Logo");
 		_logo->setGfxFromTheme(ThemeEngine::kImageLogo);
 
-		new StaticTextWidget(this, _title + ".Version", Common::U32String(gScummVMFullVersion));
+		new StaticTextWidget(this, _title + ".Version", Common::U32String(getScummVMBuildInfo()));
 	} else
 #endif
-		new StaticTextWidget(this, _title + ".Version", Common::U32String(gScummVMFullVersion));
+		new StaticTextWidget(this, _title + ".Version", Common::U32String(getScummVMBuildInfo()));
 
 	new ButtonWidget(this, _title + ".HelpButton", Common::U32String("?"), _("Click here to see Help"), kHelpCmd);
 
@@ -888,7 +888,7 @@ void LauncherDialog::reflowLayout() {
 		StaticTextWidget *ver = (StaticTextWidget *)findWidget(Common::String(_title + ".Version").c_str());
 		if (ver) {
 			ver->setAlign(g_gui.xmlEval()->getWidgetTextHAlign(_title + ".Version"));
-			ver->setLabel(Common::U32String(gScummVMFullVersion));
+			ver->setLabel(Common::U32String(getScummVMBuildInfo()));
 		}
 
 		if (!_logo)
@@ -898,7 +898,7 @@ void LauncherDialog::reflowLayout() {
 		StaticTextWidget *ver = (StaticTextWidget *)findWidget(Common::String(_title + ".Version").c_str());
 		if (ver) {
 			ver->setAlign(g_gui.xmlEval()->getWidgetTextHAlign(_title + ".Version"));
-			ver->setLabel(Common::U32String(gScummVMFullVersion));
+			ver->setLabel(Common::U32String(getScummVMBuildInfo()));
 		}
 
 		if (_logo) {

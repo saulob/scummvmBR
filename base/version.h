@@ -28,4 +28,6 @@ extern const char gScummVMCompiler[];    // e.g. "GCC 11.2.0"
 extern const char gScummVMFullVersion[]; // e.g. "ScummVM 0.4.1 (2003-06-24)"
 extern const char gScummVMFeatures[];    // e.g. "ALSA MPEG2 zLib"
 
+const char *getScummVMBuildInfo();
+
 #endif

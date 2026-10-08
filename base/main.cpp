@@ -267,6 +267,8 @@ static Common::Error runGame(const Plugin *enginePlugin, OSystem &system, const 
 	if (caption.empty())
 		caption = target;
 	if (!caption.empty())	{
+		caption += " - ";
+		caption += getScummVMBuildInfo();
 		system.setWindowCaption(caption.decode());
 	}
 
@@ -388,7 +390,10 @@ static void setupGraphics(OSystem &system) {
 	system.applyBackendSettings();
 
 	// Set initial window caption
-	system.setWindowCaption(Common::U32String(gScummVMFullVersion));
+	Common::String caption = gScummVMFullVersion;
+	caption += " - ";
+	caption += getScummVMBuildInfo();
+	system.setWindowCaption(caption.decode());
 
 	// Clear the main screen
 	system.fillScreen(0);
