@@ -85,7 +85,8 @@ void AGOSEngine::vc59_stopAnimations() {
 }
 
 void AGOSEngine::vc64_ifSpeech() {
-	if ((getGameType() == GType_SIMON2 && _subtitles && _language != Common::HE_ISR) ||
+	// Hebrew and Brazilian Portuguese keep subtitles on screen until the voice ends
+	if ((getGameType() == GType_SIMON2 && _subtitles && _language != Common::HE_ISR && _language != Common::PT_BRA) ||
 		!_sound->isVoiceActive()) {
 		vcSkipNextInstruction();
 	}
