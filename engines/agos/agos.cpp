@@ -42,6 +42,16 @@
 
 #include "audio/mididrv.h"
 
+#ifdef USE_BINK
+#include "common/events.h"
+#include "common/memstream.h"
+
+#include "graphics/cursorman.h"
+#include "graphics/paletteman.h"
+
+#include "video/bink_decoder.h"
+#endif
+
 namespace AGOS {
 
 static const GameSpecificSettings simon1_settings = {
@@ -1180,10 +1190,296 @@ void AGOSEngine::pause() {
 	}
 }
 
+#ifdef USE_BINK
+// Simon 2 intro video, embedded from a .bik file by simon2_intro.py.
+#include "agos/simon2_intro.inc"
+
+// Colours are binned to 5 bits per channel to build the intro palette.
+static const int kSimon2IntroBins = 32 * 32 * 32;
+
+static inline int simon2IntroBinKey(int r, int g, int b) {
+	return (r << 10) | (g << 5) | b;
+}
+
+// The Bink decoder outputs ARGB32; returns the 5-bit colour bin of a pixel.
+static inline int simon2IntroPixelBin(uint32 pixel, const Graphics::PixelFormat &format) {
+	const int r = (pixel >> format.rShift) & 0xFF;
+	const int g = (pixel >> format.gShift) & 0xFF;
+	const int b = (pixel >> format.bShift) & 0xFF;
+	return simon2IntroBinKey(r >> 3, g >> 3, b >> 3);
+}
+
+// Expands a 5-bit channel value back to 8 bits.
+static inline int simon2IntroExpand(int v) {
+	return (v << 3) | (v >> 2);
+}
+
+struct Simon2IntroBox {
+	uint8 lo[3];
+	uint8 hi[3];
+	uint32 count;
+};
+
+// Trims a box to the bounding box of the colour bins that hold pixels.
+static void simon2IntroShrinkBox(Simon2IntroBox &box, const uint32 *hist) {
+	uint8 lo[3] = { 31, 31, 31 };
+	uint8 hi[3] = { 0, 0, 0 };
+	uint32 count = 0;
+
+	for (int r = box.lo[0]; r <= box.hi[0]; r++) {
+		for (int g = box.lo[1]; g <= box.hi[1]; g++) {
+			for (int b = box.lo[2]; b <= box.hi[2]; b++) {
+				const uint32 n = hist[simon2IntroBinKey(r, g, b)];
+				if (!n)
+					continue;
+
+				const int c[3] = { r, g, b };
+				for (int i = 0; i < 3; i++) {
+					if (c[i] < lo[i])
+						lo[i] = (uint8)c[i];
+					if (c[i] > hi[i])
+						hi[i] = (uint8)c[i];
+				}
+				count += n;
+			}
+		}
+	}
+
+	box.count = count;
+	if (count) {
+		for (int i = 0; i < 3; i++) {
+			box.lo[i] = lo[i];
+			box.hi[i] = hi[i];
+		}
+	}
+}
+
+// Median cut over the colour histogram. The most populated box is split at
+// the median of its widest axis until there are 255 boxes, and each box
+// becomes one palette entry. Entry 0 is kept black and the boxes use 1-255.
+// lut maps every colour bin used by the video to its palette entry.
+static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut) {
+	Common::Array<Simon2IntroBox> boxes;
+	Simon2IntroBox root = { { 0, 0, 0 }, { 31, 31, 31 }, 0 };
+	simon2IntroShrinkBox(root, hist);
+	if (root.count)
+		boxes.push_back(root);
+
+	while (boxes.size() < 255) {
+		int best = -1;
+		for (uint i = 0; i < boxes.size(); i++) {
+			const Simon2IntroBox &box = boxes[i];
+			// A single colour cannot be split.
+			if (box.lo[0] == box.hi[0] && box.lo[1] == box.hi[1] && box.lo[2] == box.hi[2])
+				continue;
+			if (best < 0 || box.count > boxes[best].count)
+				best = i;
+		}
+		if (best < 0)
+			break;
+
+		const Simon2IntroBox box = boxes[best];
+		int axis = 0;
+		for (int i = 1; i < 3; i++) {
+			if (box.hi[i] - box.lo[i] > box.hi[axis] - box.lo[axis])
+				axis = i;
+		}
+
+		// Pixel count for each position along the split axis.
+		uint32 proj[32];
+		memset(proj, 0, sizeof(proj));
+		for (int r = box.lo[0]; r <= box.hi[0]; r++) {
+			for (int g = box.lo[1]; g <= box.hi[1]; g++) {
+				for (int b = box.lo[2]; b <= box.hi[2]; b++) {
+					const int c[3] = { r, g, b };
+					proj[c[axis]] += hist[simon2IntroBinKey(r, g, b)];
+				}
+			}
+		}
+
+		// Cut where half of the pixels fall on each side.
+		int cut = box.lo[axis];
+		uint32 acc = 0;
+		for (int v = box.lo[axis]; v < box.hi[axis]; v++) {
+			cut = v;
+			acc += proj[v];
+			if (acc * 2 >= box.count)
+				break;
+		}
+
+		Simon2IntroBox left = box;
+		Simon2IntroBox right = box;
+		left.hi[axis] = (uint8)cut;
+		right.lo[axis] = (uint8)(cut + 1);
+		simon2IntroShrinkBox(left, hist);
+		simon2IntroShrinkBox(right, hist);
+
+		boxes[best] = left;
+		boxes.push_back(right);
+	}
+
+	memset(palette, 0, 256 * 3);
+	memset(lut, 0, kSimon2IntroBins);
+	for (uint i = 0; i < boxes.size(); i++) {
+		const Simon2IntroBox &box = boxes[i];
+		uint64 sum[3] = { 0, 0, 0 };
+
+		for (int r = box.lo[0]; r <= box.hi[0]; r++) {
+			for (int g = box.lo[1]; g <= box.hi[1]; g++) {
+				for (int b = box.lo[2]; b <= box.hi[2]; b++) {
+					const int key = simon2IntroBinKey(r, g, b);
+					const uint32 n = hist[key];
+					if (!n)
+						continue;
+
+					const int c[3] = { r, g, b };
+					for (int k = 0; k < 3; k++)
+						sum[k] += (uint64)n * simon2IntroExpand(c[k]);
+					lut[key] = (byte)(i + 1);
+				}
+			}
+		}
+
+		for (int k = 0; k < 3; k++)
+			palette[(i + 1) * 3 + k] = (byte)(sum[k] / box.count);
+	}
+}
+#endif
+
+void AGOSEngine::playSimon2Intro() {
+#ifdef USE_BINK
+	if (getGameType() != GType_SIMON2)
+		return;
+
+	const Graphics::PixelFormat format = Graphics::PixelFormat::createFormatARGB32();
+
+	// First pass: collect the colours the video uses, so that the palette
+	// is built from the video itself. The playback below decodes the same frames.
+	uint32 *hist = new uint32[kSimon2IntroBins]();
+	{
+		Video::BinkDecoder analyzer;
+		if (!analyzer.loadStream(new Common::MemoryReadStream(kSimon2IntroBik, kSimon2IntroBikSize)) ||
+			!analyzer.setOutputPixelFormat(format)) {
+			delete[] hist;
+			return;
+		}
+
+		const Graphics::Surface *frame;
+		while ((frame = analyzer.decodeNextFrame()) != nullptr) {
+			for (int y = 0; y < frame->h; y++) {
+				const uint32 *row = (const uint32 *)frame->getBasePtr(0, y);
+				for (int x = 0; x < frame->w; x++)
+					hist[simon2IntroPixelBin(row[x], format)]++;
+			}
+		}
+	}
+
+	byte palette[256 * 3];
+	byte *lut = new byte[kSimon2IntroBins];
+	simon2IntroBuildPalette(hist, palette, lut);
+	delete[] hist;
+
+	Video::BinkDecoder bink;
+	if (!bink.loadStream(new Common::MemoryReadStream(kSimon2IntroBik, kSimon2IntroBikSize)) ||
+		!bink.setOutputPixelFormat(format)) {
+		delete[] lut;
+		return;
+	}
+
+	// Scale the video to cover the whole game screen, cropping the parts that
+	// do not fit, so there are no black bars.
+	const int screenW = _screenWidth;
+	const int screenH = _screenHeight;
+	const int videoW = bink.getWidth();
+	const int videoH = bink.getHeight();
+	int dstW = screenW;
+	int dstH = screenH;
+	if (videoW * screenH > videoH * screenW)
+		dstW = videoW * screenH / videoH;
+	else
+		dstH = videoH * screenW / videoW;
+	const int cropX = (dstW - screenW) / 2;
+	const int cropY = (dstH - screenH) / 2;
+
+	const bool mouseVisible = CursorMan.isVisible();
+	CursorMan.showMouse(false);
+	_system->getPaletteManager()->setPalette(palette, 0, 256);
+	_mixer->stopAll();
+	bink.start();
+
+	// Esc starts a short fade out of the palette and the sound. Otherwise the
+	// video plays to the end, and no other key or click skips it.
+	const uint32 kFadeMs = 500;
+	bool fading = false;
+	uint32 fadeStart = 0;
+	byte fadePalette[256 * 3];
+	while (!shouldQuit()) {
+		Common::Event event;
+		while (_system->getEventManager()->pollEvent(event)) {
+			if (event.type == Common::EVENT_CUSTOM_ENGINE_ACTION_START && event.customType == kActionExitCutscene && !fading) {
+				fading = true;
+				fadeStart = _system->getMillis();
+			}
+		}
+
+		if (fading) {
+			const uint32 elapsed = _system->getMillis() - fadeStart;
+			if (elapsed >= kFadeMs)
+				break;
+
+			const int level = 255 - elapsed * 255 / kFadeMs;
+			for (int i = 0; i < 256 * 3; i++)
+				fadePalette[i] = (byte)(palette[i] * level / 255);
+			_system->getPaletteManager()->setPalette(fadePalette, 0, 256);
+			bink.setVolume((byte)level);
+		} else if (bink.endOfVideo()) {
+			break;
+		}
+
+		if (bink.needsUpdate()) {
+			const Graphics::Surface *frame = bink.decodeNextFrame();
+			if (frame) {
+				Graphics::Surface *screen = getBackendSurface();
+				for (int y = 0; y < screenH; y++) {
+					const uint32 *src = (const uint32 *)frame->getBasePtr(0, (y + cropY) * videoH / dstH);
+					byte *dst = (byte *)screen->getBasePtr(0, y);
+					for (int x = 0; x < screenW; x++)
+						dst[x] = lut[simon2IntroPixelBin(src[(x + cropX) * videoW / dstW], format)];
+				}
+
+				updateBackendSurface();
+				_system->updateScreen();
+			}
+		}
+
+		if (fading)
+			_system->updateScreen();
+
+		_system->delayMillis(10);
+	}
+	bink.stop();
+
+	// Leave the screen black; the normal game loading takes over from here.
+	Graphics::Surface *screen = getBackendSurface();
+	for (int y = 0; y < screenH; y++)
+		memset(screen->getBasePtr(0, y), 0, screenW);
+	updateBackendSurface();
+	memset(palette, 0, sizeof(palette));
+	_system->getPaletteManager()->setPalette(palette, 0, 256);
+	_system->updateScreen();
+
+	CursorMan.showMouse(mouseVisible);
+	delete[] lut;
+#endif
+}
+
 Common::Error AGOSEngine::go() {
 #ifdef ENABLE_AGOS2
 	loadArchives();
 #endif
+
+	// The intro always plays first, before the game data is loaded.
+	playSimon2Intro();
 
 	loadGamePcFile();
 

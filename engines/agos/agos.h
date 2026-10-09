@@ -834,6 +834,7 @@ protected:
 	bool hasSimon2LanguageFiles() const;
 	Common::Language getNextSimon2OverlayLanguage() const;
 	void cycleSimon2LanguageOverlay();
+	void playSimon2Intro();
 	Common::String translateLanguageOverlay(const Common::String &english) const;
 	const byte *getLocalStringByID(uint16 stringId);
 	uint getNextStringID();

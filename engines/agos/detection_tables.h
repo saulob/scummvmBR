@@ -2273,6 +2273,43 @@ static const AGOSGameDescription gameDescriptions[] = {
 		GF_TALKIE
 	},
 
+	// === INICIO entrada pt-BR Simon 1 ===
+	// A edicao inglesa acima, com o pacote pt-BR aplicado (simon1_ptbr).
+	//
+	// Sem md5 e sem tamanho DE PROPOSITO (nullptr + AD_NO_SIZE): o pacote
+	// reescreve GAMEPC e SIMON.GME, e o md5 muda a cada revisao do texto.
+	// O que amarra esta entrada e o IDIOMA: so casa com language=br.
+	//
+	// kPlatformWindows porque a musica continua a da edicao inglesa (SMF
+	// Windows). A espanhola e DOS (GMF); trocar a plataforma faz o midi.cpp
+	// escolher o parser errado.
+	//
+	// Sem GUIO_NOSUBTITLES: o pacote traz as legendas completas.
+	{
+		{
+			"simon1",
+			"25th Anniversary Edition",
+
+			{
+				{ "gamepc",			GAME_BASEFILE,	nullptr, AD_NO_SIZE},
+				{ "icon.dat",		GAME_ICONFILE,	nullptr, AD_NO_SIZE},
+				{ "simon.gme",		GAME_GMEFILE,	nullptr, AD_NO_SIZE},
+				{ "stripped.txt",	GAME_STRFILE,	nullptr, AD_NO_SIZE},
+				{ "tbllist",		GAME_TBLFILE,	nullptr, AD_NO_SIZE},
+				AD_LISTEND
+			},
+			Common::PT_BRA,
+			Common::kPlatformWindows,
+			ADGF_CD,
+			GUIO2(GAMEOPTION_DOS_TEMPOS, GAMEOPTION_DISABLE_FADE_EFFECTS)
+		},
+
+		GType_SIMON1,
+		GID_SIMON1,
+		GF_TALKIE
+	},
+	// === FIM entrada pt-BR Simon 1 ===
+
 	// Simon the Sorcerer 1 - 25th Anniversary Edition - Spanish CD
 	{
 		{
