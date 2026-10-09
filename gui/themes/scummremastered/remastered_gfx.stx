@@ -109,7 +109,7 @@
 	</palette>
 
 	<bitmaps>
-		<bitmap filename = 'logo.bmp' scalable_file = 'logo.svg' width = '287' height = '80'/>
+		<bitmap filename = 'logo.bmp' scalable_file = 'logo-br.svg' width = '287' height = '80'/>
 		<bitmap filename = 'cursor.bmp' scalable_file = 'cursor.svg' width = '24' height = '24'/>
 		<bitmap filename = 'cursor_small.bmp' scalable_file = 'cursor.svg' width = '16' height = '16'/>
 		<bitmap filename = 'cursor-index.bmp' scalable_file = 'cursor-index.svg' width = '24' height = '24'/>
