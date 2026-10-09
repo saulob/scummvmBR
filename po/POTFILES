@@ -61,6 +61,7 @@ engines/engine.cpp
 engines/game.cpp
 engines/metaengine.cpp
 engines/savestate.cpp
+engines/traducoes.cpp
 
 graphics/renderer.cpp
 

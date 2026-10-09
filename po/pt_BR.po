@@ -7214,6 +7214,48 @@ msgstr "Utilizar telas de salvar/carregar originais"
 msgid "Toggle between the system cursor and the default cursor."
 msgstr "Alternar entre o cursor do sistema e o cursor padrão."
 
+#: engines/agos/dialogs.cpp:104
+msgid "Translate the game into Brazilian Portuguese"
+msgstr "Traduzir o jogo para português do Brasil"
+
+#: engines/agos/dialogs.cpp:105
+msgid ""
+"Uses the Brazilian Portuguese translation built into ScummVMBR. The game "
+"files are not changed."
+msgstr ""
+"Usa a tradução para português do Brasil embutida no ScummVMBR. Os arquivos "
+"do jogo não são alterados."
+
+#: engines/agos/agos.cpp:745
+msgid "The game will run in its original language."
+msgstr "O jogo vai rodar no idioma original."
+
+#: engines/traducoes.cpp:192 engines/traducoes.cpp:232
+#, c-format
+msgid "The translation file %s%s is corrupted."
+msgstr "O arquivo %s%s da tradução está corrompido."
+
+#: engines/traducoes.cpp:239
+#, c-format
+msgid "The file %s was not found in the game folder."
+msgstr "O arquivo %s não foi encontrado na pasta do jogo."
+
+#: engines/traducoes.cpp:245
+#, c-format
+msgid "The game file %s is not from the edition the translation was made for."
+msgstr ""
+"O arquivo %s do jogo não é o da versão para a qual a tradução foi feita."
+
+#: engines/traducoes.cpp:291
+#, c-format
+msgid "Could not read %s."
+msgstr "Não foi possível ler %s."
+
+#: engines/traducoes.cpp:319
+#, c-format
+msgid "This ScummVMBR has no translation for %s."
+msgstr "Este ScummVMBR não tem tradução para %s."
+
 #: engines/agos/dialogs.cpp:107 engines/sci/detection_options.h:261
 msgid "MIDI mode:"
 msgstr "Modo de MIDI:"
