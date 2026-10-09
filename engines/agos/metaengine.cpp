@@ -343,6 +343,16 @@ void AgosMetaEngine::registerDefaultSettings(const Common::String &target) const
 	// DOS music tempos should default to true for DOS, false for Windows and Acorn
 	bool isDos = ConfMan.get("gameid", target) == "simon1" && ConfMan.get("platform", target) == "pc";
 	ConfMan.registerDefault("dos_music_tempos", isDos);
+
+	// Simon 1 and Simon 2 default to speech and subtitles ("Both"). This is
+	// stored in the game's own domain, since registerDefault() would leak the
+	// value to every other game. An explicit choice made by the user is kept.
+	const Common::String gameId = ConfMan.get("gameid", target);
+	if ((gameId == "simon1" || gameId == "simon2") && ConfMan.hasGameDomain(target) &&
+			!ConfMan.hasKey("subtitles", target)) {
+		ConfMan.setBool("subtitles", true, target);
+		ConfMan.setBool("speech_mute", false, target);
+	}
 }
 
 GUI::OptionsContainerWidget *AgosMetaEngine::buildEngineOptionsWidget(GUI::GuiObject *boss, const Common::String &name, const Common::String &target) const {
