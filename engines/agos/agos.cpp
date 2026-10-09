@@ -737,11 +737,10 @@ Common::Error AGOSEngine::init() {
 		_subtitles = ConfMan.getBool("subtitles");
 
 		if (getGameType() == GType_SIMON1) {
-			// English and German versions don't have full subtitles
-			if (_language == Common::EN_ANY || _language == Common::DE_DEU)
-				_subtitles = false;
-			// Other versions require speech to be enabled
-			else if (!_speech) {
+			// English and German versions lack text for a few speech-only
+			// scenes, but speech and subtitles together are still allowed.
+			// All versions require speech to be enabled
+			if (!_speech) {
 				_speech = true;
 				_mixer->setVolumeForSoundType(Audio::Mixer::kSpeechSoundType, 0);
 			}

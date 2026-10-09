@@ -683,8 +683,7 @@ bool AGOSEngine::processSpecialKeys() {
 		pause();
 		break;
 	case kActionToggleSubtitle:
-		if (getGameType() == GType_FF || (getGameType() == GType_SIMON2 && (getFeatures() & GF_TALKIE)) ||
-			((getFeatures() & GF_TALKIE) && _language != Common::EN_ANY && _language != Common::DE_DEU)) {
+		if (getGameType() == GType_FF || (getFeatures() & GF_TALKIE)) {
 			if (_speech)
 				_subtitles = !_subtitles;
 		}
