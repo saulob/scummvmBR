@@ -1264,6 +1264,26 @@ static const byte kPtBrMarkFrom[]  = { 0,  0,   0,   0,   0,   0,   5  };
 static const byte kPtBrMarkTo[]    = { 0,  2,   2,   2,   2,   2,   7  };
 static const byte kPtBrMarkFlip[]  = { 0,  0,   1,   0,   0,   0,   0  };
 
+// Simon 1: a fonte grafica da edicao inglesa NAO tem letras acentuadas nos
+// slots de simbolo (';' e ponto e virgula, '@' e uma bolinha...), entao nao
+// ha doador. Os acentos abaixo sao as linhas 0..1 das letras acentuadas da
+// edicao espanhola do Simon 1 - mesma fonte, mesmo estilo: agudo de ';' (a'),
+// til de '@' (n~), trema de '#' (a:). O circunflexo foi desenhado no mesmo
+// estilo (a espanhola nao tem). O grave usa o agudo espelhado (kPtBrMarkFlip)
+// e a cedilha continua vindo da virgula, que existe na fonte inglesa.
+// 0xF = contorno, 1..3 = tons da cor do texto (igual aos glifos do jogo).
+static const byte kPtBrS1MarkW = 7;
+static const byte kPtBrS1MarkH = 2;
+static const byte kPtBrS1Marks[][kPtBrS1MarkW * kPtBrS1MarkH] = {
+	{ 0 },                                                         // nenhum
+	{ 0, 0, 15, 3, 15, 0, 0,     0, 15, 3, 15, 0, 0, 0 },          // agudo
+	{ 0, 0, 15, 3, 15, 0, 0,     0, 15, 3, 15, 0, 0, 0 },          // grave (espelhado)
+	{ 0, 0, 15, 2, 15, 0, 0,     0, 15, 3, 15, 3, 15, 0 },         // circunflexo
+	{ 0, 15, 3, 15, 2, 15, 0,    15, 3, 15, 2, 15, 0, 0 },         // til
+	{ 0, 0, 15, 0, 15, 0, 0,     0, 15, 3, 15, 3, 15, 0 },         // trema
+	{ 0 }                                                          // cedilha: virgula
+};
+
 void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint height, const char *txt) {
 	VgaPointersEntry *vpe = &_vgaBufferPointers[2];
 	byte *src, *dst, *p, *dst_org, chr;
@@ -1386,13 +1406,22 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 						break;
 				}
 
-				// E o ACENTO, copiado do glifo doador (ver kPtBrMarkDonor).
-				const byte *mk_hdr = src + 48 + (kPtBrMarkDonor[ptMark] - ' ') * 4;
-				mk_h = mk_hdr[2];
-				mk_w = mk_hdr[3];
-				mk_img = src + READ_LE_UINT16(mk_hdr);
-				mk_top = kPtBrMarkFrom[ptMark];
-				mk_bottom = kPtBrMarkTo[ptMark];
+				if (getGameType() == GType_SIMON1 && ptMark != kPtBrCedilla) {
+					// Simon 1: acento embutido (ver kPtBrS1Marks).
+					mk_img = kPtBrS1Marks[ptMark];
+					mk_w = kPtBrS1MarkW;
+					mk_h = kPtBrS1MarkH;
+					mk_top = 0;
+					mk_bottom = kPtBrS1MarkH;
+				} else {
+					// E o ACENTO, copiado do glifo doador (ver kPtBrMarkDonor).
+					const byte *mk_hdr = src + 48 + (kPtBrMarkDonor[ptMark] - ' ') * 4;
+					mk_h = mk_hdr[2];
+					mk_w = mk_hdr[3];
+					mk_img = src + READ_LE_UINT16(mk_hdr);
+					mk_top = kPtBrMarkFrom[ptMark];
+					mk_bottom = kPtBrMarkTo[ptMark];
+				}
 				if (mk_w == 0 || mk_h < mk_bottom) {
 					mk_img = nullptr;   // fonte sem esse glifo: desenha so a letra
 				} else if (ptMark != kPtBrCedilla) {
