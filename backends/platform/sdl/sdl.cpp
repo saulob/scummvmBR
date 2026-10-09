@@ -400,6 +400,22 @@ void OSystem_SDL::initBackend() {
 	ConfMan.registerDefault("iconspath", this->getDefaultIconsPath());
 	ConfMan.registerDefault("dlcspath", this->getDefaultDLCsPath());
 
+#if SDL_VERSION_ATLEAST(2, 0, 1)
+	// ScummVMBR: the built-in game translations are in "traducoes", next to
+	// the executable (see engines/traducoes.h)
+#if SDL_VERSION_ATLEAST(3, 0, 0)
+	const char *basePath = SDL_GetBasePath();
+#else
+	char *basePath = SDL_GetBasePath();
+#endif
+	if (basePath) {
+		ConfMan.registerDefault("traducoespath", Common::Path(basePath, Common::Path::kNativeSeparator).appendComponent("traducoes"));
+#if !SDL_VERSION_ATLEAST(3, 0, 0)
+		SDL_free(basePath);
+#endif
+	}
+#endif
+
 	_inited = true;
 
 	BaseBackend::initBackend();

@@ -25,8 +25,12 @@
 #include "common/fs.h"
 #include "common/path.h"
 #include "common/textconsole.h"
+#include "common/translation.h"
 
+#include "engines/traducoes.h"
 #include "engines/util.h"
+
+#include "gui/message.h"
 
 #include "agos/debugger.h"
 #include "agos/intern.h"
@@ -284,6 +288,7 @@ AGOSEngine::AGOSEngine(OSystem *system, const AGOSGameDescription *gd)
 	_speech = false;
 	_subtitles = false;
 
+	_traducaoPtBr = false;
 	_simon2OverlayLanguage = Common::EN_ANY;
 	_useSimon2LanguageOverlay = false;
 	_simon2LanguageFlagTimer = 0;
@@ -726,6 +731,25 @@ Common::Error AGOSEngine::init() {
 
 	_copyProtection = ConfMan.getBool("copy_protection");
 	_language = Common::parseLanguage(ConfMan.get("language"));
+
+	// ScummVMBR: built-in pt-BR translation, applied in memory over the
+	// original game files before any of them is read. checkGameGUIOption()
+	// takes option names, not the GUIO codes of the detection table.
+	const Common::String guiOptions = Common::getGameGUIOptionsDescription(_gameDescription->desc.guiOptions);
+	if (Common::checkGameGUIOption(GAMEOPTION_TRADUCAO_PTBR, guiOptions) &&
+			ConfMan.getBool("traducao_ptbr")) {
+		Common::U32String reason;
+		if (ScummBR::mountTraducao(_gameDescription->desc.gameId, reason)) {
+			_language = Common::PT_BRA;
+			_traducaoPtBr = true;
+		} else {
+			reason += Common::U32String("\n\n");
+			reason += _("The game will run in its original language.");
+			GUI::MessageDialog dialog(reason);
+			dialog.runModal();
+		}
+	}
+
 	_simon2OverlayLanguage = _language;
 	loadSimon2LanguageOverlay();
 
@@ -1158,6 +1182,8 @@ AGOSEngine::~AGOSEngine() {
 
 	delete _sound;
 	delete _gameFile;
+
+	ScummBR::unmountTraducao();
 }
 
 void AGOSEngine::pauseEngineIntern(bool pauseIt) {
@@ -1477,8 +1503,11 @@ Common::Error AGOSEngine::go() {
 	loadArchives();
 #endif
 
-	// The intro always plays first, before the game data is loaded.
-	playScummBRIntro();
+	// The ScummBR intro comes with the pt-BR translation only: the built-in
+	// one, or game files translated by the external package (detected by the
+	// pt-BR entries). It plays before the game data is loaded.
+	if (_traducaoPtBr || getLanguage() == Common::PT_BRA)
+		playScummBRIntro();
 
 	loadGamePcFile();
 

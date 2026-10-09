@@ -98,6 +98,17 @@ const ADExtraGuiOptionsMap optionsList[] = {
 			0
 		}
 	},
+	{
+		GAMEOPTION_TRADUCAO_PTBR,
+		{
+			_s("Translate the game into Brazilian Portuguese"),
+			_s("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."),
+			"traducao_ptbr",
+			false,
+			0,
+			0
+		}
+	},
 	AD_EXTRA_GUI_OPTIONS_TERMINATOR
 };
 

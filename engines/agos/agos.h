@@ -389,6 +389,7 @@ protected:
 	bool _backFlag;
 
 	Common::Language _language;
+	bool _traducaoPtBr; // The built-in pt-BR translation is applied
 	Common::Language _simon2OverlayLanguage;
 	bool _useSimon2LanguageOverlay;
 	Common::HashMap<Common::String, Common::String> _simon2LanguageOverlay;

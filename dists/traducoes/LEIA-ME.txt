@@ -1,0 +1,58 @@
+=====================================================================
+ ScummVMBR - Traducoes embutidas
+=====================================================================
+
+As traducoes pt-BR vao DENTRO do executavel do ScummVMBR. Esta pasta e a
+fonte delas no repositorio: uma subpasta por jogo, com os .patch.
+
+COMO O JOGADOR USA
+------------------
+1. Adiciona o jogo no ScummVMBR ("Add Game...").
+2. Na aba "Game", marca "Translate the game into Brazilian Portuguese"
+   ("Traduzir o jogo para portugues do Brasil" com a interface em portugues).
+
+A traducao e aplicada na memoria, toda vez que o jogo abre. Os arquivos do
+jogo continuam os originais; desmarcar a opcao volta ao ingles. Nao precisa
+rodar nenhum programa nem baixar nada a parte.
+
+JOGOS
+-----
+simon1  Simon the Sorcerer - 25th Anniversary Edition, em ingles (GOG/Steam)
+        Tambem a "20th Anniversary" DOS em ingles, que tem os mesmos arquivos.
+        Traducao original e menus: Marcos (MAVOLASCO82).
+        Revisao, acentuacao, painel de verbos e adaptacao: equipe scummvmBR.
+
+simon2  Simon the Sorcerer II - 25th Anniversary Edition, em ingles (GOG/Steam)
+        Traducao e projeto: Rafael (ScummBR) e Saulo Benigno.
+
+A opcao so aparece para essas edicoes. Se os arquivos do jogo nao forem
+exatamente os da edicao, o ScummVMBR avisa e o jogo roda no idioma original.
+
+ATUALIZAR UMA TRADUCAO
+----------------------
+1. Rode o patcher de traducao do jogo (simon1_ptbr, simon2_ptbr...) numa
+   copia do jogo. Ele deixa os arquivos traduzidos e os originais em .bkp.
+2. python devtools/scummbr/gerar_traducao.py <pasta_do_jogo> dists/traducoes/<jogo>
+   Isso regrava os .patch daqui e o engines/traducoes_embutidas.inc.
+3. Recompile o ScummVMBR e faca o commit dos dois.
+
+TESTAR SEM RECOMPILAR
+---------------------
+Uma pasta "traducoes" ao lado do executavel tem prioridade sobre a traducao
+embutida. Gere os .patch direto nela:
+
+   python devtools/scummbr/gerar_traducao.py <pasta_do_jogo> <pasta_do_exe>/traducoes/<jogo>
+
+Apague a pasta depois do teste, senao ela continua valendo no lugar da
+traducao embutida.
+
+TEXTOS DA INTERFACE
+-------------------
+O texto do checkbox e as mensagens de erro ficam em ingles no codigo e sao
+traduzidos pelo po/pt_BR.po, como o resto da interface do ScummVM. Depois de
+mudar o .po:
+
+   python devtools/scummbr/gerar_translations_dat.py
+
+Isso regrava o gui/themes/translations.dat (que vai dentro do executavel).
+Recompile e faca o commit dos dois.

@@ -1864,7 +1864,9 @@ static const AGOSGameDescription gameDescriptions[] = {
 			Common::EN_ANY,
 			Common::kPlatformDOS,
 			ADGF_CD,
-			GUIO0()
+			// ScummVMBR: same files as the 25th Anniversary Edition below, so
+			// the pt-BR translation in traducoes/simon1 works here too
+			GUIO1(GAMEOPTION_TRADUCAO_PTBR)
 		},
 
 		GType_SIMON1,
@@ -2265,7 +2267,8 @@ static const AGOSGameDescription gameDescriptions[] = {
 			Common::EN_ANY,
 			Common::kPlatformWindows,
 			ADGF_CD,
-			GUIO2(GAMEOPTION_DOS_TEMPOS, GAMEOPTION_DISABLE_FADE_EFFECTS)
+			// ScummVMBR: the pt-BR translation in traducoes/simon1 is made for this edition
+			GUIO3(GAMEOPTION_DOS_TEMPOS, GAMEOPTION_DISABLE_FADE_EFFECTS, GAMEOPTION_TRADUCAO_PTBR)
 		},
 
 		GType_SIMON1,
@@ -2274,11 +2277,17 @@ static const AGOSGameDescription gameDescriptions[] = {
 	},
 
 	// === INICIO entrada pt-BR Simon 1 ===
-	// A edicao inglesa acima, com o pacote pt-BR aplicado (simon1_ptbr).
+	// A edicao inglesa acima, com o pacote pt-BR externo aplicado
+	// (simon1_ptbr, versao de 09/10/2026). O jeito normal de jogar traduzido
+	// e o checkbox da traducao embutida, sobre os arquivos originais; esta
+	// entrada so serve para quem ja traduziu os arquivos com o pacote.
 	//
-	// Sem md5 e sem tamanho DE PROPOSITO (nullptr + AD_NO_SIZE): o pacote
-	// reescreve GAMEPC e SIMON.GME, e o md5 muda a cada revisao do texto.
-	// O que amarra esta entrada e o IDIOMA: so casa com language=br.
+	// md5 e tamanho fixos: GAMEPC e SIMON.GME como o pacote os grava. Sem
+	// eles, esta entrada casava com QUALQUER Simon 1 de mesmos nomes de
+	// arquivo (original ingles, espanhol...) na hora de adicionar o jogo, e
+	// aparecia "Portuguese (Brazil)" como opcao falsa. Outra revisao do pacote
+	// muda o md5: traduzir de novo com o pacote atual, ou voltar ao original e
+	// usar o checkbox. Os outros tres arquivos o pacote nao altera.
 	//
 	// kPlatformWindows porque a musica continua a da edicao inglesa (SMF
 	// Windows). A espanhola e DOS (GMF); trocar a plataforma faz o midi.cpp
@@ -2291,11 +2300,11 @@ static const AGOSGameDescription gameDescriptions[] = {
 			"25th Anniversary Edition",
 
 			{
-				{ "gamepc",			GAME_BASEFILE,	nullptr, AD_NO_SIZE},
-				{ "icon.dat",		GAME_ICONFILE,	nullptr, AD_NO_SIZE},
-				{ "simon.gme",		GAME_GMEFILE,	nullptr, AD_NO_SIZE},
-				{ "stripped.txt",	GAME_STRFILE,	nullptr, AD_NO_SIZE},
-				{ "tbllist",		GAME_TBLFILE,	nullptr, AD_NO_SIZE},
+				{ "gamepc",			GAME_BASEFILE,	"1b232c8734dc2126b337df13d815ccbc", 38075},
+				{ "icon.dat",		GAME_ICONFILE,	"22107c24dfb31b66ac503c28a6e20b19", 14361},
+				{ "simon.gme",		GAME_GMEFILE,	"2c1f10cd1d3bb6540ffae8283528473f", 7036734},
+				{ "stripped.txt",	GAME_STRFILE,	"a27e87a9ba21212d769804b3df47bfb2", 252},
+				{ "tbllist",		GAME_TBLFILE,	"d198a80de2c59e4a0cd24b98814849e8", 711},
 				AD_LISTEND
 			},
 			Common::PT_BRA,
@@ -3155,7 +3164,8 @@ static const AGOSGameDescription gameDescriptions[] = {
 			Common::EN_ANY,
 			Common::kPlatformWindows,
 			ADGF_CD,
-			GUIO1(GAMEOPTION_DISABLE_FADE_EFFECTS)
+			// ScummVMBR: the pt-BR translation in traducoes/simon2 is made for this edition
+			GUIO2(GAMEOPTION_DISABLE_FADE_EFFECTS, GAMEOPTION_TRADUCAO_PTBR)
 		},
 
 		GType_SIMON2,
@@ -3164,28 +3174,34 @@ static const AGOSGameDescription gameDescriptions[] = {
 	},
 
 	// === INICIO entrada pt-BR (aplicar_entrada_deteccao.py) ===
-	// Mesma edicao da entrada em ingles acima, rodando com a traducao pt-BR.
+	// Mesma edicao da entrada em ingles acima, com o pacote pt-BR externo
+	// aplicado (simon2_ptbr, versao de 07/10/2026). O jeito normal de jogar
+	// traduzido e o checkbox da traducao embutida, sobre os arquivos originais;
+	// esta entrada so serve para quem ja traduziu os arquivos com o pacote.
 	//
-	// Sem md5 e sem tamanho DE PROPOSITO (nullptr + AD_NO_SIZE): a ferramenta
-	// de traducao reescreve SIMON2.GME e GSPTR30 a cada reimport, e qualquer
-	// md5 fixado aqui ficaria obsoleto na hora. Quando a deteccao falha, o
-	// detection_fallback.h assume e crava kPlatformDOS; dai midi.cpp escolhe o
-	// parser XMIDI em vez do MidiParser_SimonWin, a musica nao carrega e o jogo
-	// trava no assert(_parent) de audio/audiostream.cpp.
+	// md5 e tamanho fixos: SIMON2.GME e GSPTR30 como o pacote os grava. Sem
+	// eles, esta entrada casava com QUALQUER Simon 2 de mesmos nomes de
+	// arquivo na hora de adicionar o jogo, e aparecia "Portuguese (Brazil)"
+	// como opcao falsa. Outra revisao do pacote muda o md5: traduzir de novo
+	// com o pacote atual, ou voltar ao original e usar o checkbox. Para testar
+	// uma revisao, use a pasta traducoes (dists/traducoes/LEIA-ME.txt), e NAO
+	// rode de novo o aplicar_entrada_deteccao.py, que tira o md5 daqui.
 	//
-	// O que amarra esta entrada e o IDIOMA, nao os bytes: so casa quando o
-	// target esta com language=br no scummvm.ini.
+	// Se a deteccao falha, o detection_fallback.h assume e crava kPlatformDOS;
+	// dai midi.cpp escolhe o parser XMIDI em vez do MidiParser_SimonWin, a
+	// musica nao carrega e o jogo trava no assert(_parent) de
+	// audio/audiostream.cpp.
 	{
 		{
 			"simon2",
 			"25th Anniversary Edition",
 
 			{
-				{ "gsptr30",       GAME_BASEFILE, nullptr, AD_NO_SIZE },
-				{ "icon.dat",      GAME_ICONFILE, nullptr, AD_NO_SIZE },
-				{ "simon2.gme",    GAME_GMEFILE, nullptr, AD_NO_SIZE },
-				{ "stripped.txt",  GAME_STRFILE, nullptr, AD_NO_SIZE },
-				{ "tbllist",       GAME_TBLFILE, nullptr, AD_NO_SIZE },
+				{ "gsptr30",       GAME_BASEFILE, "23121e024b12d1e28059ac8a60f5612c", 61067 },
+				{ "icon.dat",      GAME_ICONFILE, "72096a62d36e6034ea9fecc13b2dbdab", 18089 },
+				{ "simon2.gme",    GAME_GMEFILE, "5a120e1428f3708933648736d5dbacb5", 20068098 },
+				{ "stripped.txt",  GAME_STRFILE, "e229f84d46fa83f99b4a7115679f3fb6", 171 },
+				{ "tbllist",       GAME_TBLFILE, "2082f8d02075e590300478853a91ffd9", 513 },
 				AD_LISTEND
 			},
 			Common::PT_BRA,

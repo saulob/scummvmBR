@@ -8,7 +8,8 @@ MODULE_OBJS := \
 	game.o \
 	metaengine.o \
 	obsolete.o \
-	savestate.o
+	savestate.o \
+	traducoes.o
 
 # Include common rules
 include $(srcdir)/rules.mk
