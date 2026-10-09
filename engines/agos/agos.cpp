@@ -1191,37 +1191,37 @@ void AGOSEngine::pause() {
 }
 
 #ifdef USE_BINK
-// Simon 2 intro video, embedded from a .bik file by simon2_intro.py.
-#include "agos/simon2_intro.inc"
+// ScummBR intro video for Simon 1 and Simon 2, embedded from a .bik file by scummbr_intro.py.
+#include "agos/scummbr_intro.inc"
 
 // Colours are binned to 5 bits per channel to build the intro palette.
-static const int kSimon2IntroBins = 32 * 32 * 32;
+static const int kScummBRIntroBins = 32 * 32 * 32;
 
-static inline int simon2IntroBinKey(int r, int g, int b) {
+static inline int scummBRIntroBinKey(int r, int g, int b) {
 	return (r << 10) | (g << 5) | b;
 }
 
 // The Bink decoder outputs ARGB32; returns the 5-bit colour bin of a pixel.
-static inline int simon2IntroPixelBin(uint32 pixel, const Graphics::PixelFormat &format) {
+static inline int scummBRIntroPixelBin(uint32 pixel, const Graphics::PixelFormat &format) {
 	const int r = (pixel >> format.rShift) & 0xFF;
 	const int g = (pixel >> format.gShift) & 0xFF;
 	const int b = (pixel >> format.bShift) & 0xFF;
-	return simon2IntroBinKey(r >> 3, g >> 3, b >> 3);
+	return scummBRIntroBinKey(r >> 3, g >> 3, b >> 3);
 }
 
 // Expands a 5-bit channel value back to 8 bits.
-static inline int simon2IntroExpand(int v) {
+static inline int scummBRIntroExpand(int v) {
 	return (v << 3) | (v >> 2);
 }
 
-struct Simon2IntroBox {
+struct ScummBRIntroBox {
 	uint8 lo[3];
 	uint8 hi[3];
 	uint32 count;
 };
 
 // Trims a box to the bounding box of the colour bins that hold pixels.
-static void simon2IntroShrinkBox(Simon2IntroBox &box, const uint32 *hist) {
+static void scummBRIntroShrinkBox(ScummBRIntroBox &box, const uint32 *hist) {
 	uint8 lo[3] = { 31, 31, 31 };
 	uint8 hi[3] = { 0, 0, 0 };
 	uint32 count = 0;
@@ -1229,7 +1229,7 @@ static void simon2IntroShrinkBox(Simon2IntroBox &box, const uint32 *hist) {
 	for (int r = box.lo[0]; r <= box.hi[0]; r++) {
 		for (int g = box.lo[1]; g <= box.hi[1]; g++) {
 			for (int b = box.lo[2]; b <= box.hi[2]; b++) {
-				const uint32 n = hist[simon2IntroBinKey(r, g, b)];
+				const uint32 n = hist[scummBRIntroBinKey(r, g, b)];
 				if (!n)
 					continue;
 
@@ -1258,17 +1258,17 @@ static void simon2IntroShrinkBox(Simon2IntroBox &box, const uint32 *hist) {
 // the median of its widest axis until there are 255 boxes, and each box
 // becomes one palette entry. Entry 0 is kept black and the boxes use 1-255.
 // lut maps every colour bin used by the video to its palette entry.
-static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut) {
-	Common::Array<Simon2IntroBox> boxes;
-	Simon2IntroBox root = { { 0, 0, 0 }, { 31, 31, 31 }, 0 };
-	simon2IntroShrinkBox(root, hist);
+static void scummBRIntroBuildPalette(const uint32 *hist, byte *palette, byte *lut) {
+	Common::Array<ScummBRIntroBox> boxes;
+	ScummBRIntroBox root = { { 0, 0, 0 }, { 31, 31, 31 }, 0 };
+	scummBRIntroShrinkBox(root, hist);
 	if (root.count)
 		boxes.push_back(root);
 
 	while (boxes.size() < 255) {
 		int best = -1;
 		for (uint i = 0; i < boxes.size(); i++) {
-			const Simon2IntroBox &box = boxes[i];
+			const ScummBRIntroBox &box = boxes[i];
 			// A single colour cannot be split.
 			if (box.lo[0] == box.hi[0] && box.lo[1] == box.hi[1] && box.lo[2] == box.hi[2])
 				continue;
@@ -1278,7 +1278,7 @@ static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut
 		if (best < 0)
 			break;
 
-		const Simon2IntroBox box = boxes[best];
+		const ScummBRIntroBox box = boxes[best];
 		int axis = 0;
 		for (int i = 1; i < 3; i++) {
 			if (box.hi[i] - box.lo[i] > box.hi[axis] - box.lo[axis])
@@ -1292,7 +1292,7 @@ static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut
 			for (int g = box.lo[1]; g <= box.hi[1]; g++) {
 				for (int b = box.lo[2]; b <= box.hi[2]; b++) {
 					const int c[3] = { r, g, b };
-					proj[c[axis]] += hist[simon2IntroBinKey(r, g, b)];
+					proj[c[axis]] += hist[scummBRIntroBinKey(r, g, b)];
 				}
 			}
 		}
@@ -1307,34 +1307,34 @@ static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut
 				break;
 		}
 
-		Simon2IntroBox left = box;
-		Simon2IntroBox right = box;
+		ScummBRIntroBox left = box;
+		ScummBRIntroBox right = box;
 		left.hi[axis] = (uint8)cut;
 		right.lo[axis] = (uint8)(cut + 1);
-		simon2IntroShrinkBox(left, hist);
-		simon2IntroShrinkBox(right, hist);
+		scummBRIntroShrinkBox(left, hist);
+		scummBRIntroShrinkBox(right, hist);
 
 		boxes[best] = left;
 		boxes.push_back(right);
 	}
 
 	memset(palette, 0, 256 * 3);
-	memset(lut, 0, kSimon2IntroBins);
+	memset(lut, 0, kScummBRIntroBins);
 	for (uint i = 0; i < boxes.size(); i++) {
-		const Simon2IntroBox &box = boxes[i];
+		const ScummBRIntroBox &box = boxes[i];
 		uint64 sum[3] = { 0, 0, 0 };
 
 		for (int r = box.lo[0]; r <= box.hi[0]; r++) {
 			for (int g = box.lo[1]; g <= box.hi[1]; g++) {
 				for (int b = box.lo[2]; b <= box.hi[2]; b++) {
-					const int key = simon2IntroBinKey(r, g, b);
+					const int key = scummBRIntroBinKey(r, g, b);
 					const uint32 n = hist[key];
 					if (!n)
 						continue;
 
 					const int c[3] = { r, g, b };
 					for (int k = 0; k < 3; k++)
-						sum[k] += (uint64)n * simon2IntroExpand(c[k]);
+						sum[k] += (uint64)n * scummBRIntroExpand(c[k]);
 					lut[key] = (byte)(i + 1);
 				}
 			}
@@ -1346,19 +1346,19 @@ static void simon2IntroBuildPalette(const uint32 *hist, byte *palette, byte *lut
 }
 #endif
 
-void AGOSEngine::playSimon2Intro() {
+void AGOSEngine::playScummBRIntro() {
 #ifdef USE_BINK
-	if (getGameType() != GType_SIMON2)
+	if (getGameType() != GType_SIMON1 && getGameType() != GType_SIMON2)
 		return;
 
 	const Graphics::PixelFormat format = Graphics::PixelFormat::createFormatARGB32();
 
 	// First pass: collect the colours the video uses, so that the palette
 	// is built from the video itself. The playback below decodes the same frames.
-	uint32 *hist = new uint32[kSimon2IntroBins]();
+	uint32 *hist = new uint32[kScummBRIntroBins]();
 	{
 		Video::BinkDecoder analyzer;
-		if (!analyzer.loadStream(new Common::MemoryReadStream(kSimon2IntroBik, kSimon2IntroBikSize)) ||
+		if (!analyzer.loadStream(new Common::MemoryReadStream(kScummBRIntroBik, kScummBRIntroBikSize)) ||
 			!analyzer.setOutputPixelFormat(format)) {
 			delete[] hist;
 			return;
@@ -1369,18 +1369,18 @@ void AGOSEngine::playSimon2Intro() {
 			for (int y = 0; y < frame->h; y++) {
 				const uint32 *row = (const uint32 *)frame->getBasePtr(0, y);
 				for (int x = 0; x < frame->w; x++)
-					hist[simon2IntroPixelBin(row[x], format)]++;
+					hist[scummBRIntroPixelBin(row[x], format)]++;
 			}
 		}
 	}
 
 	byte palette[256 * 3];
-	byte *lut = new byte[kSimon2IntroBins];
-	simon2IntroBuildPalette(hist, palette, lut);
+	byte *lut = new byte[kScummBRIntroBins];
+	scummBRIntroBuildPalette(hist, palette, lut);
 	delete[] hist;
 
 	Video::BinkDecoder bink;
-	if (!bink.loadStream(new Common::MemoryReadStream(kSimon2IntroBik, kSimon2IntroBikSize)) ||
+	if (!bink.loadStream(new Common::MemoryReadStream(kScummBRIntroBik, kScummBRIntroBikSize)) ||
 		!bink.setOutputPixelFormat(format)) {
 		delete[] lut;
 		return;
@@ -1444,7 +1444,7 @@ void AGOSEngine::playSimon2Intro() {
 					const uint32 *src = (const uint32 *)frame->getBasePtr(0, (y + cropY) * videoH / dstH);
 					byte *dst = (byte *)screen->getBasePtr(0, y);
 					for (int x = 0; x < screenW; x++)
-						dst[x] = lut[simon2IntroPixelBin(src[(x + cropX) * videoW / dstW], format)];
+						dst[x] = lut[scummBRIntroPixelBin(src[(x + cropX) * videoW / dstW], format)];
 				}
 
 				updateBackendSurface();
@@ -1479,7 +1479,7 @@ Common::Error AGOSEngine::go() {
 #endif
 
 	// The intro always plays first, before the game data is loaded.
-	playSimon2Intro();
+	playScummBRIntro();
 
 	loadGamePcFile();
 
