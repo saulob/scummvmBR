@@ -9,6 +9,7 @@ MODULE_OBJS := \
 	metaengine.o \
 	obsolete.o \
 	savestate.o \
+	scummbr_intro.o \
 	traducoes.o
 
 # Include common rules

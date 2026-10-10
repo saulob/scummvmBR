@@ -692,6 +692,7 @@ public:
 	void restart();
 	bool isUsingOriginalGUI() const;
 	bool isMessageBannerActive(); // For Indy4 Jap character shadows
+	bool hasTraducaoPtBr() const { return _traducaoPtBr; }
 
 	bool _isIndy4Jap = false;
 
@@ -747,6 +748,10 @@ protected:
 	int _saveScriptParam = 0;
 	int _guiCursorAnimCounter = 0;
 	int _v5VoiceMode = 0;
+
+	// ScummVMBR: the built-in pt-BR translation is applied. The text is then
+	// always shown, so "Voice Only" turns into "Voice and Text".
+	bool _traducaoPtBr = false;
 
 	// Fake flags just for sub v5 GUIs
 	int _internalSpeakerSoundsAreOn = 1;

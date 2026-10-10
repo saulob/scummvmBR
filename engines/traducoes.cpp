@@ -21,6 +21,7 @@
 
 #include "common/archive.h"
 #include "common/array.h"
+#include "common/compression/deflate.h"
 #include "common/config-manager.h"
 #include "common/debug.h"
 #include "common/fs.h"
@@ -135,7 +136,10 @@ uint32 PatchedFileStream::read(void *dataPtr, uint32 dataSize) {
 		const uint32 len = MIN(op.length - skip, dataSize - done);
 
 		if (op.copy) {
-			if (!_original->seek(op.offset + skip) || _original->read(dst + done, len) != len) {
+			// The engines mostly read in order, so the original file is
+			// usually already in place; a needless seek empties its buffer.
+			const uint32 from = op.offset + skip;
+			if ((_original->pos() != from && !_original->seek(from)) || _original->read(dst + done, len) != len) {
 				_err = true;
 				break;
 			}
@@ -249,12 +253,13 @@ static PatchedFile *loadPatch(Common::SeekableReadStream &in, const Common::Stri
 	return file.release();
 }
 
-// A patch built into the executable
+// A patch built into the executable, compressed with zlib
 struct EmbeddedPatch {
 	const char *gameId;
-	const char *fileName; // The game file it patches
+	const char *fileName;   // The game file it patches
 	const byte *data;
-	uint32 size;
+	uint32 packedSize;
+	uint32 size;            // Of the .patch, once uncompressed
 };
 
 // kEmbeddedPatches, made from dists/traducoes by gerar_traducao.py
@@ -303,8 +308,15 @@ bool mountTraducao(const Common::String &gameId, Common::U32String &reason) {
 			if (gameId != patch->gameId)
 				continue;
 
-			Common::MemoryReadStream in(patch->data, patch->size);
-			PatchedFile *file = loadPatch(in, patch->fileName, reason);
+			Common::Array<byte> data(patch->size);
+			unsigned long size = patch->size;
+			PatchedFile *file = nullptr;
+			if (Common::inflateZlib(data.data(), &size, patch->data, patch->packedSize) && size == patch->size) {
+				Common::MemoryReadStream in(data.data(), data.size());
+				file = loadPatch(in, patch->fileName, reason);
+			} else {
+				reason = Common::U32String::format(_("The translation file %s%s is corrupted."), patch->fileName, kPatchSuffix);
+			}
 			if (!file) {
 				warning("Traducao de %s nao aplicada: %s", gameId.c_str(), reason.encode().c_str());
 				return false;

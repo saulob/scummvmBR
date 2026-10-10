@@ -32,6 +32,8 @@
 #include "backends/keymapper/keymap.h"
 #include "backends/keymapper/keymapper.h"
 
+#include "engines/scummbr_intro.h"
+#include "engines/traducoes.h"
 #include "engines/util.h"
 
 #include "gui/message.h"
@@ -569,6 +571,9 @@ ScummEngine::~ScummEngine() {
 
 	delete _res;
 	delete _gdi;
+
+	if (_traducaoPtBr)
+		ScummBR::unmountTraducao();
 }
 
 
@@ -1026,6 +1031,29 @@ Common::Error ScummEngine::init() {
 				}
 			}
 			delete f;
+		}
+	}
+
+	// ScummVMBR: built-in pt-BR translation, applied in memory over the
+	// original game files before any of them is read. The option is only
+	// offered for the editions the translations were made for (see
+	// ScummMetaEngine::getExtraGuiOptions()); the game files are checked
+	// here anyway.
+	if (ConfMan.getBool("traducao_ptbr")) {
+		Common::U32String reason;
+		if (ScummBR::mountTraducao(_game.gameid, reason)) {
+			_traducaoPtBr = true;
+
+			// Voice and text by default, for the games with voices. The
+			// player can still turn the voices off, but not the text.
+			ConfMan.setBool("subtitles", true);
+			ConfMan.setBool("speech_mute", false);
+			_v5VoiceMode = 1;
+		} else {
+			reason += Common::U32String("\n\n");
+			reason += _("The game will run in its original language.");
+			GUI::MessageDialog dialog(reason);
+			dialog.runModal();
 		}
 	}
 
@@ -2672,6 +2700,10 @@ void ScummEngine::syncSoundSettings() {
 		_musicEngine->setSfxVolume(soundVolumeSfx);
 	}
 
+	// With the built-in pt-BR translation the text is always shown.
+	if (_traducaoPtBr && !ConfMan.getBool("subtitles"))
+		ConfMan.setBool("subtitles", true);
+
 	if (ConfMan.getBool("speech_mute"))
 		_voiceMode = 2;
 	else
@@ -2783,6 +2815,11 @@ Common::Error ScummEngine::go() {
 		return Common::kNoError;
 	}
 #endif
+
+	// The ScummBR intro comes with the built-in pt-BR translation, before
+	// the game starts.
+	if (_traducaoPtBr)
+		ScummBR::playIntro();
 
 	setTotalPlayTime();
 

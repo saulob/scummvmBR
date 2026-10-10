@@ -363,6 +363,9 @@ private:
 #ifdef USE_TTS
 	GUI::CheckboxWidget *_enableTTSCheckbox = nullptr;
 #endif
+	// ScummVMBR: the built-in pt-BR translation. This widget replaces the
+	// generic list of engine options, so the option has to be added here too.
+	GUI::CheckboxWidget *_traducaoPtBrCheckbox = nullptr;
 
 	GUI::SliderWidget *_playbackAdjustmentSlider = nullptr;
 	GUI::StaticTextWidget *_playbackAdjustmentValue = nullptr;

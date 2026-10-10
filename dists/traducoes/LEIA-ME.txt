@@ -8,12 +8,16 @@ fonte delas no repositorio: uma subpasta por jogo, com os .patch.
 COMO O JOGADOR USA
 ------------------
 1. Adiciona o jogo no ScummVMBR ("Add Game...").
-2. Na aba "Game", marca "Translate the game into Brazilian Portuguese"
+2. Nas opcoes do jogo, marca "Translate the game into Brazilian Portuguese"
    ("Traduzir o jogo para portugues do Brasil" com a interface em portugues).
 
 A traducao e aplicada na memoria, toda vez que o jogo abre. Os arquivos do
 jogo continuam os originais; desmarcar a opcao volta ao ingles. Nao precisa
 rodar nenhum programa nem baixar nada a parte.
+
+Com a traducao, o jogo abre com o video do ScummBR (Esc pula). Nos jogos
+SCUMM, o texto fica sempre ligado: o padrao e voz e texto nos jogos com voz,
+e o jogador pode tirar a voz, mas nao o texto.
 
 JOGOS
 -----
@@ -25,16 +29,41 @@ simon1  Simon the Sorcerer - 25th Anniversary Edition, em ingles (GOG/Steam)
 simon2  Simon the Sorcerer II - 25th Anniversary Edition, em ingles (GOG/Steam)
         Traducao e projeto: Rafael (ScummBR) e Saulo Benigno.
 
+tentacle  Day of the Tentacle, CD em ingles (GOG)
+atlantis  Indiana Jones and the Fate of Atlantis, CD em ingles (GOG)
+indy3     Indiana Jones and the Last Crusade, VGA em ingles (GOG)
+loom      Loom, VGA com vozes (CD) em ingles (GOG)
+samnmax   Sam & Max Hit the Road, CD em ingles (GOG)
+          Traducoes do Grupo ScummBR de Traducao (scummbr.org), feitas sobre
+          essas edicoes. Os creditos completos estao nos LEIA-ME de cada
+          patch original.
+
 A opcao so aparece para essas edicoes. Se os arquivos do jogo nao forem
 exatamente os da edicao, o ScummVMBR avisa e o jogo roda no idioma original.
 
 ATUALIZAR UMA TRADUCAO
 ----------------------
-1. Rode o patcher de traducao do jogo (simon1_ptbr, simon2_ptbr...) numa
-   copia do jogo. Ele deixa os arquivos traduzidos e os originais em .bkp.
+Com um patcher (simon1_ptbr, simon2_ptbr...):
+1. Rode o patcher numa copia do jogo. Ele deixa os arquivos traduzidos e os
+   originais em .bkp.
 2. python devtools/scummbr/gerar_traducao.py <pasta_do_jogo> dists/traducoes/<jogo>
-   Isso regrava os .patch daqui e o engines/traducoes_embutidas.inc.
-3. Recompile o ScummVMBR e faca o commit dos dois.
+
+Com o jogo original numa pasta e o ja traduzido em outra:
+1. python devtools/scummbr/gerar_traducao.py <original> <traduzido> dists/traducoes/<jogo> <arquivos>
+   <arquivos> sao os arquivos do jogo que a traducao muda, e aceitam * ("*.lfl").
+   Os comandos usados para os jogos SCUMM, com as pastas ING e PTBR:
+     ... ING PTBR dists/traducoes/tentacle tentacle.000 tentacle.001
+     ... ING PTBR dists/traducoes/atlantis atlantis.00?
+     ... ING PTBR dists/traducoes/indy3 *.lfl
+     ... ING PTBR dists/traducoes/loom 000.lfl 902.lfl disk01.lec
+     ... ING PTBR dists/traducoes/samnmax samnmax.000 samnmax.001
+
+Os dois jeitos regravam os .patch daqui e o engines/traducoes_embutidas.inc.
+Depois, recompile o ScummVMBR e faca o commit dos dois.
+
+Um jogo novo tambem precisa do checkbox na engine dele: no AGOS, a opcao
+GAMEOPTION_TRADUCAO_PTBR nas entradas do detection_tables.h; na SCUMM, a
+edicao em isTraducaoPtBrEdition() (engines/scumm/metaengine.cpp).
 
 TESTAR SEM RECOMPILAR
 ---------------------
@@ -42,6 +71,9 @@ Uma pasta "traducoes" ao lado do executavel tem prioridade sobre a traducao
 embutida. Gere os .patch direto nela:
 
    python devtools/scummbr/gerar_traducao.py <pasta_do_jogo> <pasta_do_exe>/traducoes/<jogo>
+
+(ou com <original> <traduzido> antes da pasta de saida, como acima). A pasta
+de teste guarda os .patch sem comprimir; so os embutidos sao comprimidos.
 
 Apague a pasta depois do teste, senao ela continua valendo no lugar da
 traducao embutida.

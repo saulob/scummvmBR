@@ -686,14 +686,16 @@ void ScummEngine::writeVar(uint var, int value) {
 			if (_game.heversion <= 74 && currentScriptSlotIs(1))
 				return;
 			assert(value == 0 || value == 1);
-			ConfMan.setBool("subtitles", (value != 0));
+			// The built-in pt-BR translation keeps the text on
+			ConfMan.setBool("subtitles", (value != 0) || _traducaoPtBr);
 		}
 		if (VAR_NOSUBTITLES != 0xFF && var == VAR_NOSUBTITLES) {
 			// Ignore default setting in HE60-71 games
 			if (_game.heversion >= 60 && currentScriptSlotIs(1))
 				return;
 			assert(value == 0 || value == 1);
-			ConfMan.setBool("subtitles", !value);
+			// The built-in pt-BR translation keeps the text on
+			ConfMan.setBool("subtitles", !value || _traducaoPtBr);
 		}
 
 		if (var == VAR_CHARINC) {

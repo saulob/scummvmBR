@@ -1084,7 +1084,9 @@ void ScummEngine::processKeyboard(Common::KeyState lastKeyHit) {
 
 			voiceMode++;
 			if (voiceMode >= 3) {
-				voiceMode = 0;
+				// With the built-in pt-BR translation the text stays on,
+				// so there is no "Voice Only".
+				voiceMode = _traducaoPtBr ? 1 : 0;
 			}
 
 			if (_game.version == 5)

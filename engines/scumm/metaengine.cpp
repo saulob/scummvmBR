@@ -976,6 +976,36 @@ const ExtraGuiOption enableRebel1RestoredContent = {
 	0
 };
 
+// ScummVMBR: built-in pt-BR translation (engines/traducoes.h)
+static const ExtraGuiOption traducaoPtBr = {
+	_s("Translate the game into Brazilian Portuguese"),
+	_s("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."),
+	"traducao_ptbr",
+	false,
+	0,
+	0
+};
+
+// The editions the built-in pt-BR translations were made for: the English
+// GOG releases. ScummEngine::init() still checks the game files.
+static bool isTraducaoPtBrEdition(const Common::String &gameid, const Common::String &extra, const Common::String &language) {
+	static const char *const editions[][2] = {
+		{ "tentacle", "CD" },
+		{ "atlantis", "CD" },
+		{ "indy3", "VGA" },
+		{ "loom", "VGA" },
+		{ "samnmax", "CD" }
+	};
+
+	if (language != "en")
+		return false;
+	for (int i = 0; i < ARRAYSIZE(editions); i++) {
+		if (gameid == editions[i][0] && extra == editions[i][1])
+			return true;
+	}
+	return false;
+}
+
 const ExtraGuiOptions ScummMetaEngine::getExtraGuiOptions(const Common::String &target) const {
 	ExtraGuiOptions options;
 	// Query the GUI options
@@ -1098,6 +1128,9 @@ const ExtraGuiOptions ScummMetaEngine::getExtraGuiOptions(const Common::String &
 
 		if (isValidTarget)
 			options.push_back(mi2NIDemoModeDisable);
+	}
+	if (target.empty() || isTraducaoPtBrEdition(gameid, extra, language)) {
+		options.push_back(traducaoPtBr);
 	}
 
 	return options;

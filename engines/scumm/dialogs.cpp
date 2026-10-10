@@ -1000,8 +1000,11 @@ void SubtitleSettingsDialog::cycleValue() {
 	};
 
 	_value += 1;
-	if (_value > 2)
-		_value = 0;
+	if (_value > 2) {
+		// With the built-in pt-BR translation the text stays on, so
+		// there is no "Speech Only".
+		_value = _vm->hasTraducaoPtBr() ? 1 : 0;
+	}
 
 	if (_value == 1 && g_system->getOverlayWidth() <= 320)
 		setInfoText(_c("Speech & Subs", "lowres"));
@@ -1640,6 +1643,10 @@ LoomVgaGameOptionsWidget::LoomVgaGameOptionsWidget(GuiObject *boss, const Common
 #ifdef USE_TTS
 	_enableTTSCheckbox = createEnableTTSCheckbox(widgetsBoss(), "LoomVgaGameOptionsDialog.EnableTTS");
 #endif
+	// Loom VGA is only known in English, the edition the translation was made for
+	_traducaoPtBrCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "LoomVgaGameOptionsDialog.TraducaoPtBr",
+		_("Translate the game into Brazilian Portuguese"),
+		_("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."));
 }
 
 void LoomVgaGameOptionsWidget::load() {
@@ -1657,6 +1664,7 @@ void LoomVgaGameOptionsWidget::load() {
 #ifdef USE_TTS
 	_enableTTSCheckbox->setState(ConfMan.getBool("tts_enabled", _domain));
 #endif
+	_traducaoPtBrCheckbox->setState(ConfMan.hasKey("traducao_ptbr", _domain) && ConfMan.getBool("traducao_ptbr", _domain));
 }
 
 bool LoomVgaGameOptionsWidget::save() {
@@ -1666,6 +1674,7 @@ bool LoomVgaGameOptionsWidget::save() {
 #ifdef USE_TTS
 	ConfMan.setBool("tts_enabled", _enableTTSCheckbox->getState(), _domain);
 #endif
+	ConfMan.setBool("traducao_ptbr", _traducaoPtBrCheckbox->getState(), _domain);
 	return true;
 }
 
@@ -1680,6 +1689,7 @@ void LoomVgaGameOptionsWidget::defineLayout(GUI::ThemeEval &layouts, const Commo
 #ifdef USE_TTS
 	layouts.addWidget("EnableTTS", "Checkbox");
 #endif
+	layouts.addWidget("TraducaoPtBr", "Checkbox");
 
 	addEnhancementsLayout(layouts)
 			.closeLayout()
