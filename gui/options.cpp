@@ -2694,8 +2694,9 @@ void GlobalOptionsDialog::addGUIControls(GuiObject *boss, const Common::String &
 	}
 
 	// Select the currently configured language or default/English if
-	// nothing is specified.
-	if (ConfMan.hasKey("gui_language") && !ConfMan.get("gui_language").empty())
+	// nothing is specified. ScummVMBR: the registered default (pt_BR) counts
+	// as configured, or saving the options would switch to the system language.
+	if (!ConfMan.get("gui_language").empty())
 		_guiLanguagePopUp->setSelectedTag(TransMan.parseLanguage(ConfMan.get("gui_language")));
 	else
 #ifdef USE_DETECTLANG

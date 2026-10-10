@@ -2064,6 +2064,13 @@ protected:
 #endif // DISABLE_TOWNS_DUAL_LAYER_MODE
 };
 
+/**
+ * ScummVMBR: whether the game is one of the editions the built-in pt-BR
+ * translations were made for (engines/traducoes.h). Takes the "gameid",
+ * "extra" and "language" settings of the game. Defined in metaengine.cpp.
+ */
+bool isTraducaoPtBrEdition(const Common::String &gameid, const Common::String &extra, const Common::String &language);
+
 } // End of namespace Scumm
 
 #endif

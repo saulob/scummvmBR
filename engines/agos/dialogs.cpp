@@ -32,6 +32,18 @@
 namespace AGOS {
 
 const ADExtraGuiOptionsMap optionsList[] = {
+	// ScummVMBR: the translation goes first, where it stands out
+	{
+		GAMEOPTION_TRADUCAO_PTBR,
+		{
+			_s("Translate the game into Brazilian Portuguese"),
+			_s("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."),
+			"traducao_ptbr",
+			true, // On by default: adding the game leaves the translation checked
+			0,
+			0
+		}
+	},
 	{
 		GAMEOPTION_COPY_PROTECTION,
 		{
@@ -94,17 +106,6 @@ const ADExtraGuiOptionsMap optionsList[] = {
 			_s("Toggle between the system cursor and the default cursor."),
 			"use_system_cursor",
 			true,
-			0,
-			0
-		}
-	},
-	{
-		GAMEOPTION_TRADUCAO_PTBR,
-		{
-			_s("Translate the game into Brazilian Portuguese"),
-			_s("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."),
-			"traducao_ptbr",
-			false,
 			0,
 			0
 		}

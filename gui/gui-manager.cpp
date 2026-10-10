@@ -75,7 +75,9 @@ GuiManager::GuiManager() : CommandSender(nullptr), _redrawStatus(kRedrawDisabled
 	memset(_cursor, 0xFF, sizeof(_cursor));
 
 #ifdef USE_TRANSLATION
-	// Enable translation
+	// Enable translation. ScummVMBR starts in Brazilian Portuguese until the
+	// player picks another language.
+	ConfMan.registerDefault("gui_language", "pt_BR");
 	TransMan.setLanguage(ConfMan.get("gui_language").c_str());
 	setLanguageRTL();
 #endif // USE_TRANSLATION
@@ -84,7 +86,8 @@ GuiManager::GuiManager() : CommandSender(nullptr), _redrawStatus(kRedrawDisabled
 	initIconsSet();
 	_iconsSetChanged = false;
 
-	ConfMan.registerDefault("gui_theme", "scummremastered");
+	// ScummVMBR: the green ResidualVM Modern Theme Remastered by default
+	ConfMan.registerDefault("gui_theme", "residualvm");
 	Common::String themefile(ConfMan.get("gui_theme"));
 
 	ConfMan.registerDefault("gui_renderer", ThemeEngine::findModeConfigName(ThemeEngine::_defaultRendererMode));

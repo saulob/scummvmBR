@@ -1664,7 +1664,8 @@ void LoomVgaGameOptionsWidget::load() {
 #ifdef USE_TTS
 	_enableTTSCheckbox->setState(ConfMan.getBool("tts_enabled", _domain));
 #endif
-	_traducaoPtBrCheckbox->setState(ConfMan.hasKey("traducao_ptbr", _domain) && ConfMan.getBool("traducao_ptbr", _domain));
+	// On by default, like in ScummMetaEngine::getExtraGuiOptions()
+	_traducaoPtBrCheckbox->setState(!ConfMan.hasKey("traducao_ptbr", _domain) || ConfMan.getBool("traducao_ptbr", _domain));
 }
 
 bool LoomVgaGameOptionsWidget::save() {
@@ -1684,12 +1685,12 @@ void LoomVgaGameOptionsWidget::defineLayout(GUI::ThemeEval &layouts, const Commo
 			.addPadding(0, 0, 0, 0)
 			.addLayout(GUI::ThemeLayout::kLayoutVertical, 4)
 				.addPadding(0, 0, 10, 0)
+				.addWidget("TraducaoPtBr", "Checkbox") // ScummVMBR: first, where it stands out
 				.addWidget("EnableOriginalGUI", "Checkbox");
 
 #ifdef USE_TTS
 	layouts.addWidget("EnableTTS", "Checkbox");
 #endif
-	layouts.addWidget("TraducaoPtBr", "Checkbox");
 
 	addEnhancementsLayout(layouts)
 			.closeLayout()

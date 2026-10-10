@@ -1035,11 +1035,11 @@ Common::Error ScummEngine::init() {
 	}
 
 	// ScummVMBR: built-in pt-BR translation, applied in memory over the
-	// original game files before any of them is read. The option is only
-	// offered for the editions the translations were made for (see
-	// ScummMetaEngine::getExtraGuiOptions()); the game files are checked
-	// here anyway.
-	if (ConfMan.getBool("traducao_ptbr")) {
+	// original game files before any of them is read. The option is on by
+	// default, so it only counts for the editions the translations were made
+	// for (the ones that show it); the game files are checked here anyway.
+	if (isTraducaoPtBrEdition(_game.gameid, ConfMan.get("extra"), ConfMan.get("language")) &&
+			ConfMan.getBool("traducao_ptbr")) {
 		Common::U32String reason;
 		if (ScummBR::mountTraducao(_game.gameid, reason)) {
 			_traducaoPtBr = true;
