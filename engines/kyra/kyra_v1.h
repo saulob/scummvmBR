@@ -23,6 +23,7 @@
 #define KYRA_KYRA_V1_H
 
 #include "engines/engine.h"
+#include "engines/scummbr_intro.h"
 
 #include "common/array.h"
 #include "common/error.h"
@@ -160,6 +161,9 @@ public:
 	// config specific
 	bool speechEnabled();
 	bool textEnabled();
+	// ScummVMBR: the built-in pt-BR translation is applied. The text is then
+	// always shown, so "Voice only" turns into "Voice & Text".
+	bool traducaoPtBr() const { return _traducaoPtBr; }
 
 	enum kVolumeEntry {
 		kVolumeMusic = 0,
@@ -202,6 +206,9 @@ protected:
 		err = init();
 		if (err.getCode() != Common::kNoError)
 			return err;
+		// The ScummBR intro comes with the built-in pt-BR translation
+		if (_traducaoPtBr)
+			ScummBR::playIntro();
 		return go();
 	}
 
@@ -256,6 +263,7 @@ protected:
 	bool _configSounds;
 	uint8 _configVoice;
 	bool _configNullSound;
+	bool _traducaoPtBr;
 
 	Common::RenderMode _configRenderMode;
 

@@ -58,6 +58,10 @@ struct GameFlags {
 	bool useInstallerPackage  : 1;
 
 	byte gameID;
+
+	// ScummVMBR: the edition has a built-in pt-BR translation (engines/traducoes.h).
+	// Set from the detection entry by KyraMetaEngine::createInstance().
+	bool traducaoPtBrEdition;
 };
 
 } // End of namespace Kyra
@@ -87,6 +91,8 @@ struct KYRAGameDescription {
 #define GAMEOPTION_EOB_NPCPATCH			GUIO_GAMEOPTIONS11
 #define GAMEOPTION_EOB_AUTOMAP			GUIO_GAMEOPTIONS12
 #define GAMEOPTION_EOB_AUTOMAP_SEGA		GUIO_GAMEOPTIONS13
+
+#define GAMEOPTION_TRADUCAO_PTBR		GUIO_GAMEOPTIONS14
 
 } // End of anonymous namespace
 

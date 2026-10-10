@@ -43,6 +43,7 @@ static const char *const kArchiveName = "traducao";
 static const int kArchivePriority = 10;
 
 static const char kPatchMagic[] = "SBRPTCH1";
+static const char kNewFileMagic[] = "SBRNOVO1"; // A file the game does not have
 static const char kPatchSuffix[] = ".patch";
 
 enum {
@@ -57,7 +58,8 @@ struct PatchOp {
 	bool copy;
 };
 
-// A translated file: the original file of the game plus the patch.
+// A translated file: the original file of the game plus the patch. A new
+// file has no original, only one kOpData operation with the whole file.
 struct PatchedFile {
 	Common::ArchiveMemberPtr original;
 	uint32 size;
@@ -179,9 +181,12 @@ public:
 			return nullptr;
 
 		const PatchedFilePtr &file = _files.getVal(path);
-		Common::SeekableReadStream *original = file->original->createReadStream();
-		if (!original)
-			return nullptr;
+		Common::SeekableReadStream *original = nullptr;
+		if (file->original) {
+			original = file->original->createReadStream();
+			if (!original)
+				return nullptr;
+		}
 		return new PatchedFileStream(file, original);
 	}
 
@@ -189,10 +194,42 @@ private:
 	Common::HashMap<Common::Path, PatchedFilePtr, Common::Path::IgnoreCase_Hash, Common::Path::IgnoreCase_EqualTo> _files;
 };
 
+// Reads a new file, which the game does not have: the whole file follows
+// the size.
+static PatchedFile *loadNewFile(Common::SeekableReadStream &in, const Common::String &fileName, Common::U32String &reason) {
+	const uint32 size = in.readUint32LE();
+	if (in.err() || in.eos() || size == 0 || size != in.size() - in.pos()) {
+		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), fileName.c_str(), kPatchSuffix);
+		return nullptr;
+	}
+
+	Common::ScopedPtr<PatchedFile> file(new PatchedFile());
+	file->size = size;
+	file->literals.resize(size);
+	if (in.read(&file->literals[0], size) != size) {
+		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), fileName.c_str(), kPatchSuffix);
+		return nullptr;
+	}
+
+	PatchOp op;
+	op.dstStart = 0;
+	op.length = size;
+	op.offset = 0;
+	op.copy = false;
+	file->ops.push_back(op);
+	return file.release();
+}
+
 // Reads a patch and checks it against the original file of the game.
 static PatchedFile *loadPatch(Common::SeekableReadStream &in, const Common::String &fileName, Common::U32String &reason) {
 	char magic[8];
-	if (in.read(magic, sizeof(magic)) != sizeof(magic) || memcmp(magic, kPatchMagic, sizeof(magic)) != 0) {
+	if (in.read(magic, sizeof(magic)) != sizeof(magic)) {
+		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), fileName.c_str(), kPatchSuffix);
+		return nullptr;
+	}
+	if (memcmp(magic, kNewFileMagic, sizeof(magic)) == 0)
+		return loadNewFile(in, fileName, reason);
+	if (memcmp(magic, kPatchMagic, sizeof(magic)) != 0) {
 		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), fileName.c_str(), kPatchSuffix);
 		return nullptr;
 	}

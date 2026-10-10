@@ -28,6 +28,11 @@
 #include "common/error.h"
 #include "common/config-manager.h"
 #include "common/debug-channels.h"
+#include "common/translation.h"
+
+#include "engines/traducoes.h"
+
+#include "gui/message.h"
 
 namespace Kyra {
 
@@ -72,6 +77,7 @@ KyraEngine_v1::KyraEngine_v1(OSystem *system, const GameFlags &flags)
 	_configMusic = 0;
 	_configSounds = false;
 	_configVoice = _configWalkspeed = 0;
+	_traducaoPtBr = false;
 }
 
 void KyraEngine_v1::pauseEngineIntern(bool pause) {
@@ -84,6 +90,28 @@ void KyraEngine_v1::pauseEngineIntern(bool pause) {
 }
 
 Common::Error KyraEngine_v1::init() {
+	// ScummVMBR: built-in pt-BR translation, applied in memory over the
+	// original game files before any of them is read. The translated texts
+	// are loose files, which the engine reads before its packages and before
+	// the entries of kyra.dat.
+	if (_flags.traducaoPtBrEdition && ConfMan.getBool("traducao_ptbr")) {
+		Common::U32String reason;
+		if (ScummBR::mountTraducao(ConfMan.get("gameid"), reason)) {
+			_traducaoPtBr = true;
+
+			// Voice and text by default. The player can still turn the voices
+			// off, but not the text.
+			ConfMan.setBool("subtitles", true);
+			ConfMan.setBool("speech_mute", false);
+		} else {
+			reason += Common::U32String("\n\n");
+			reason += _("The game will run in its original language.");
+			// ::GUI, since Kyra::GUI is the game's own GUI class
+			::GUI::MessageDialog dialog(reason);
+			dialog.runModal();
+		}
+	}
+
 	// Setup mixer
 	syncSoundSettings();
 
@@ -204,6 +232,9 @@ KyraEngine_v1::~KyraEngine_v1() {
 	delete _text;
 	delete _timer;
 	delete _emc;
+
+	if (_traducaoPtBr)
+		ScummBR::unmountTraducao();
 }
 
 Common::Point KyraEngine_v1::getMousePos() {
@@ -596,6 +627,10 @@ void KyraEngine_v1::readSettings() {
 	else
 		_configVoice = 0;   // Text only
 
+	// With the built-in pt-BR translation the text is always shown
+	if (_traducaoPtBr && _configVoice == 1)
+		_configVoice = 2;
+
 	setWalkspeed(_configWalkspeed);
 }
 
@@ -642,7 +677,8 @@ bool KyraEngine_v1::speechEnabled() {
 }
 
 bool KyraEngine_v1::textEnabled() {
-	return !_flags.isTalkie || (_configVoice == 0 || _configVoice == 2);
+	// With the built-in pt-BR translation the text is always shown
+	return !_flags.isTalkie || _traducaoPtBr || (_configVoice == 0 || _configVoice == 2);
 }
 
 int KyraEngine_v1::convertVolumeToMixer(int value) {

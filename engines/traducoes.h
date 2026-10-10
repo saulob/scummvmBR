@@ -29,7 +29,9 @@
  * ScummVMBR built-in game translations.
  *
  * A translation is a set of <FILE>.patch, each one turning the original <FILE>
- * of the game into the translated one. They are made by
+ * of the game into the translated one, or adding a <FILE> the game does not
+ * have (for engines that read loose files before their packages, like Kyra).
+ * They are made by
  * devtools/scummbr/gerar_traducao.py, which also documents the format, and are
  * kept in dists/traducoes/<gameid>/.
  *

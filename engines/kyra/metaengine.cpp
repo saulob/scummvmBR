@@ -30,6 +30,7 @@
 #include "common/system.h"
 #include "common/savefile.h"
 #include "common/translation.h"
+#include "common/gui_options.h"
 
 #include "engines/advancedDetector.h"
 
@@ -38,6 +39,19 @@
 #include "kyra/detection.h"
 
 const ADExtraGuiOptionsMap gameGuiOptions[] = {
+	// ScummVMBR: the translation goes first, where it stands out
+	{
+		GAMEOPTION_TRADUCAO_PTBR,
+		{
+			_s("Translate the game into Brazilian Portuguese"),
+			_s("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."),
+			"traducao_ptbr",
+			true, // On by default: adding the game leaves the translation checked
+			0,
+			0
+		}
+	},
+
 	// Kyrandia 3 options
 
 	{
@@ -267,6 +281,9 @@ Common::Error KyraMetaEngine::createInstance(OSystem *syst, Engine **engine, con
 
 	flags.lang = gd->desc.language;
 	flags.platform = gd->desc.platform;
+	// checkGameGUIOption() takes option names, not the GUIO codes of the table
+	flags.traducaoPtBrEdition = Common::checkGameGUIOption(GAMEOPTION_TRADUCAO_PTBR,
+		Common::getGameGUIOptionsDescription(gd->desc.guiOptions));
 
 	Common::Platform platform = Common::parsePlatform(ConfMan.get("platform"));
 	if (platform != Common::kPlatformUnknown)

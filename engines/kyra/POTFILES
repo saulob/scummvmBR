@@ -1,6 +1,7 @@
 engines/kyra/detection_tables.h
 engines/kyra/metaengine.cpp
 engines/kyra/engine/eobcommon.cpp
+engines/kyra/engine/kyra_v1.cpp
 engines/kyra/engine/lol.cpp
 engines/kyra/gui/saveload_eob.cpp
 engines/kyra/graphics/screen_eob_amiga.cpp

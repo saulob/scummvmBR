@@ -28,12 +28,26 @@ USO
   arquivos que o jogo nao le (.ini, .lnk, desinstalador...) nao devem entrar.
   O .patch leva o nome do arquivo na PASTA_ORIGINAL.
 
+  Um arquivo que so existe na PASTA_TRADUZIDA vira um "arquivo novo": o .patch
+  leva o arquivo inteiro. Serve para os jogos que leem arquivos soltos antes
+  dos pacotes, como o Kyrandia.
+
+  O kyra.dat traduzido (Kyrandia) nao entra inteiro: entram so os registros
+  dele que diferem do dists/engine-data/kyra.dat, e so os do jogo da
+  PASTA_DE_SAIDA (kyra1, kyra2 ou kyra3), cada um como arquivo novo com o nome
+  do registro (00010101...). O Kyrandia le esses registros pelo nome e da
+  prioridade aos arquivos soltos, entao eles valem no lugar dos do kyra.dat,
+  seja qual for a versao dele.
+
   Para atualizar a traducao embutida do Simon 1, depois de rodar o
   simon1_ptbr.py na pasta do jogo:
     python devtools/scummbr/gerar_traducao.py D:/jogos/simon1 dists/traducoes/simon1
 
   Para o Day of the Tentacle, com o jogo original em ING e o traduzido em PTBR:
     python devtools/scummbr/gerar_traducao.py ING PTBR dists/traducoes/tentacle tentacle.000 tentacle.001
+
+  Para o Kyrandia 1, que fica na pasta DAT:
+    python devtools/scummbr/gerar_traducao.py ING/DAT PTBR/DAT dists/traducoes/kyra1 *.emc *.cps *.wsa *.fnt credits.txt kyra.dat
 
   Para testar sem recompilar, grave numa pasta "traducoes" ao lado do
   executavel; ela tem prioridade sobre a traducao embutida:
@@ -48,6 +62,11 @@ FORMATO DO .patch (little endian, lido por engines/traducoes.cpp)
   operacoes, na ordem em que montam o arquivo traduzido:
     byte 0, uint32 posicao, uint32 tamanho   copia do arquivo original
     byte 1, uint32 tamanho, bytes            dados novos
+
+FORMATO DO .patch DE UM ARQUIVO NOVO (sem original no jogo)
+  char[8]   "SBRNOVO1"
+  uint32    tamanho do arquivo
+  bytes     o arquivo
 """
 
 import fnmatch
@@ -59,11 +78,13 @@ import sys
 import zlib
 
 MAGICO = b"SBRPTCH1"
+MAGICO_NOVO = b"SBRNOVO1"
 COPIA = 0
 DADOS = 1
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TRADUCOES = os.path.join(RAIZ, "dists", "traducoes")
+KYRA_DAT = os.path.join(RAIZ, "dists", "engine-data", "kyra.dat")
 INC = os.path.join(RAIZ, "engines", "traducoes_embutidas.inc")
 
 # Tamanho dos blocos do original usados para achar trechos iguais. Trecho
@@ -139,9 +160,19 @@ def montar_patch(orig, novo, ops):
     return bytes(saida)
 
 
+def montar_novo(novo):
+    return MAGICO_NOVO + struct.pack("<I", len(novo)) + novo
+
+
 def aplicar(patch, orig):
-    """Le o .patch como o engines/traducoes.cpp le, para conferir o resultado."""
-    if patch[:8] != MAGICO:
+    """Le o .patch como o engines/traducoes.cpp le, para conferir o resultado.
+    orig e None para um arquivo novo."""
+    if patch[:8] == MAGICO_NOVO:
+        tamanho, = struct.unpack_from("<I", patch, 8)
+        if orig is not None or len(patch) != 12 + tamanho:
+            raise ValueError("arquivo novo errado")
+        return patch[12:]
+    if patch[:8] != MAGICO or orig is None:
         raise ValueError("assinatura errada")
     tam_orig, = struct.unpack_from("<I", patch, 8)
     if tam_orig != len(orig) or patch[12:28] != hashlib.md5(orig).digest():
@@ -223,33 +254,71 @@ def pares_bkp(jogo):
 
 def pares_pastas(original, traduzida, mascaras):
     """(original, traduzido, nome) de cada arquivo das duas pastas que entra no
-    patch. Sem mascaras, entram os arquivos diferentes."""
+    patch; original e None num arquivo novo. Sem mascaras, entram os arquivos
+    diferentes e os novos."""
     def arquivos(pasta):
         return dict((nome.lower(), os.path.join(pasta, nome)) for nome in os.listdir(pasta)
                     if os.path.isfile(os.path.join(pasta, nome)))
 
     orig, trad = arquivos(original), arquivos(traduzida)
+    todos = set(orig) | set(trad)
     for m in mascaras:
-        if not any(fnmatch.fnmatchcase(chave, m.lower()) for chave in orig):
-            print("Nenhum arquivo %s em %s" % (m, original))
+        if not any(fnmatch.fnmatchcase(chave, m.lower()) for chave in todos):
+            print("Nenhum arquivo %s em %s nem em %s" % (m, original, traduzida))
             return []
 
     pares = []
-    for chave in sorted(orig):
-        nome = os.path.basename(orig[chave])
+    for chave in sorted(todos):
+        nome = os.path.basename(orig.get(chave) or trad[chave])
         if mascaras:
             if not any(fnmatch.fnmatchcase(chave, m.lower()) for m in mascaras):
                 continue
             if chave not in trad:
                 print("%-12s nao existe em %s" % (nome, traduzida))
                 return []
-        elif chave not in trad or ler(orig[chave]) == ler(trad[chave]):
+        elif chave not in trad or (chave in orig and ler(orig[chave]) == ler(trad[chave])):
             continue
-        pares.append((orig[chave], trad[chave], nome))
+        pares.append((orig.get(chave), trad[chave], nome))
 
     if not pares:
         print("Nenhum arquivo diferente entre %s e %s" % (original, traduzida))
     return pares
+
+
+def ler_pak(caminho):
+    """Registros {nome: dados} de um pacote do Kyrandia (kyra.dat): uint32 LE
+    com a posicao e o nome terminado em zero, ate um nome vazio. Os ultimos
+    16 bytes do kyra.dat sao o md5 do resto."""
+    dados = ler(caminho)
+    fim = len(dados) - 16
+    registros = []
+    pos = 0
+    while True:
+        inicio, = struct.unpack_from("<I", dados, pos)
+        zero = dados.index(b"\0", pos + 4)
+        nome = dados[pos + 4:zero].decode("latin-1")
+        pos = zero + 1
+        if not nome:
+            break
+        registros.append((nome, inicio))
+        if inicio >= fim:
+            break
+    return dict((nome, dados[inicio:(registros[i + 1][1] if i + 1 < len(registros) else fim)])
+                for i, (nome, inicio) in enumerate(registros))
+
+
+def registros_kyra_dat(traduzido, saida):
+    """(nome, dados) dos registros do kyra.dat traduzido que diferem do kyra.dat
+    do ScummVM, so os do jogo de saida. O INDEX fica de fora."""
+    jogos = {"kyra1": "0", "kyra2": "1", "kyra3": "2"}
+    jogo = os.path.basename(os.path.normpath(saida)).lower()
+    if jogo not in jogos:
+        print("kyra.dat: a pasta de saida tem que ser kyra1, kyra2 ou kyra3, nao %s" % jogo)
+        return None
+    oficial = ler_pak(KYRA_DAT)
+    novos = ler_pak(traduzido)
+    return [(nome, dados) for nome, dados in sorted(novos.items())
+            if nome != "INDEX" and len(nome) == 8 and nome[1] == jogos[jogo] and oficial.get(nome) != dados]
 
 
 def main():
@@ -271,9 +340,34 @@ def main():
 
     os.makedirs(saida, exist_ok=True)
     gerados = set()
+
+    # O kyra.dat vira os registros traduzidos, cada um como arquivo novo
+    expandidos = []
     for original, traduzido, nome in pares:
+        if nome.lower() != "kyra.dat":
+            expandidos.append((original, traduzido, nome))
+            continue
+        registros = registros_kyra_dat(traduzido, saida)
+        if registros is None:
+            return 1
+        print("%-12s %d registros traduzidos" % (nome, len(registros)))
+        expandidos += [(None, dados, registro) for registro, dados in registros]
+    pares = expandidos
+
+    for original, traduzido, nome in pares:
+        novo = traduzido if isinstance(traduzido, bytes) else ler(traduzido)
+        if original is None:
+            patch = montar_novo(novo)
+            if aplicar(patch, None) != novo:
+                print("%-12s ERRO: o .patch nao reproduz o arquivo novo" % nome)
+                return 1
+            with io.open(os.path.join(saida, nome + ".patch"), "wb") as f:
+                f.write(patch)
+            gerados.add((nome + ".patch").lower())
+            print("%-12s %9d bytes, arquivo novo" % (nome, len(novo)))
+            continue
+
         orig = ler(original)
-        novo = ler(traduzido)
         if orig == novo:
             print("%-12s igual ao original (jogo nao traduzido?), pulado" % nome)
             continue

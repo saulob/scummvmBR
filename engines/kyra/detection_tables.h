@@ -418,7 +418,8 @@ const KYRAGameDescription adGameDescs[] = {
 			Common::EN_ANY,
 			Common::kPlatformDOS,
 			ADGF_CD,
-			GUIO4(GUIO_MIDIADLIB, GUIO_MIDIMT32, GUIO_MIDIPCSPK, GUIO_RENDERVGA)
+			// ScummVMBR: the GOG edition has a built-in pt-BR translation
+			GUIO5(GUIO_MIDIADLIB, GUIO_MIDIMT32, GUIO_MIDIPCSPK, GUIO_RENDERVGA, GAMEOPTION_TRADUCAO_PTBR)
 		},
 		KYRA1_CD_FLAGS
 	},
@@ -785,7 +786,8 @@ const KYRAGameDescription adGameDescs[] = {
 			Common::EN_ANY,
 			Common::kPlatformDOS,
 			ADGF_DROPLANGUAGE | ADGF_CD,
-			GUIO5(GUIO_MIDIADLIB, GUIO_MIDIMT32, GUIO_MIDIGM, GUIO_MIDIPCSPK, GUIO_RENDERVGA)
+			// ScummVMBR: built-in pt-BR translation, over the English game only
+			GUIO6(GUIO_MIDIADLIB, GUIO_MIDIMT32, GUIO_MIDIGM, GUIO_MIDIPCSPK, GUIO_RENDERVGA, GAMEOPTION_TRADUCAO_PTBR)
 		},
 		KYRA2_CD_FLAGS
 	},

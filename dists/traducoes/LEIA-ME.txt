@@ -16,8 +16,8 @@ jogo continuam os originais; desmarcar a opcao volta ao ingles. Nao precisa
 rodar nenhum programa nem baixar nada a parte.
 
 Com a traducao, o jogo abre com o video do ScummBR (Esc pula). Nos jogos
-SCUMM, o texto fica sempre ligado: o padrao e voz e texto nos jogos com voz,
-e o jogador pode tirar a voz, mas nao o texto.
+SCUMM e no Kyrandia, o texto fica sempre ligado: o padrao e voz e texto nos
+jogos com voz, e o jogador pode tirar a voz, mas nao o texto.
 
 JOGOS
 -----
@@ -34,9 +34,17 @@ atlantis  Indiana Jones and the Fate of Atlantis, CD em ingles (GOG)
 indy3     Indiana Jones and the Last Crusade, VGA em ingles (GOG)
 loom      Loom, VGA com vozes (CD) em ingles (GOG)
 samnmax   Sam & Max Hit the Road, CD em ingles (GOG)
+kyra1     The Legend of Kyrandia, CD em ingles (GOG), pasta DAT
+kyra2     The Legend of Kyrandia: Hand of Fate, CD em ingles (GOG)
           Traducoes do Grupo ScummBR de Traducao (scummbr.org), feitas sobre
           essas edicoes. Os creditos completos estao nos LEIA-ME de cada
           patch original.
+
+No Kyrandia, a traducao sao arquivos soltos que o jogo le antes dos pacotes
+(.PAK): eles vao como "arquivos novos". Os textos do kyra.dat (nomes de
+itens, mensagens) vao como os registros traduzidos dele (00010101...), que o
+jogo tambem le antes do kyra.dat; por isso a traducao nao depende da versao
+do kyra.dat.
 
 A opcao so aparece para essas edicoes. Se os arquivos do jogo nao forem
 exatamente os da edicao, o ScummVMBR avisa e o jogo roda no idioma original.
@@ -57,13 +65,17 @@ Com o jogo original numa pasta e o ja traduzido em outra:
      ... ING PTBR dists/traducoes/indy3 *.lfl
      ... ING PTBR dists/traducoes/loom 000.lfl 902.lfl disk01.lec
      ... ING PTBR dists/traducoes/samnmax samnmax.000 samnmax.001
+     ... ING/DAT PTBR/DAT dists/traducoes/kyra1 *.emc *.cps *.wsa *.fnt credits.txt kyra.dat
+     ... ING PTBR dists/traducoes/kyra2 *.emc *.fmc *.gmc *.dle *.eng *.cps *.wsa *.fnt *.csh kyra.dat
+   Um arquivo que so existe na pasta traduzida vira "arquivo novo". O
+   kyra.dat vira so os registros traduzidos do jogo da pasta de saida.
 
 Os dois jeitos regravam os .patch daqui e o engines/traducoes_embutidas.inc.
 Depois, recompile o ScummVMBR e faca o commit dos dois.
 
-Um jogo novo tambem precisa do checkbox na engine dele: no AGOS, a opcao
-GAMEOPTION_TRADUCAO_PTBR nas entradas do detection_tables.h; na SCUMM, a
-edicao em isTraducaoPtBrEdition() (engines/scumm/metaengine.cpp).
+Um jogo novo tambem precisa do checkbox na engine dele: no AGOS e no
+Kyrandia, a opcao GAMEOPTION_TRADUCAO_PTBR nas entradas do detection_tables.h;
+na SCUMM, a edicao em isTraducaoPtBrEdition() (engines/scumm/metaengine.cpp).
 
 TESTAR SEM RECOMPILAR
 ---------------------
