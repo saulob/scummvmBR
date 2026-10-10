@@ -1062,10 +1062,11 @@ Common::Error ScummEngine::init() {
 		if (ScummBR::mountTraducao(_game.gameid, reason)) {
 			_traducaoPtBr = true;
 
-			// The translated Monkey Island 1 is the Ultimate Talkie Edition
-			// (no voices yet), so it runs as one. The Special Edition then
-			// reads the translated MONKEY.000/001 instead of Monkey1.pak.
-			if (_game.id == GID_MONKEY) {
+			// The translated Monkey Island games are the Ultimate Talkie
+			// Edition (no voices for Monkey Island 2), so they run as one.
+			// The Monkey Island 1 Special Edition then reads the translated
+			// MONKEY.000/001 instead of Monkey1.pak.
+			if (_game.id == GID_MONKEY || _game.id == GID_MONKEY2) {
 				_game.features |= GF_ULTIMATE_TALKIE;
 				if (monkeySE) {
 					// The voices come from the Speech.xwb in the audio folder

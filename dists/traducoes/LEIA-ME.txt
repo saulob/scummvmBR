@@ -42,6 +42,8 @@ kyra2     The Legend of Kyrandia: Hand of Fate, CD em ingles (GOG)
 monkey    The Secret of Monkey Island, os arquivos classicos em ingles: o
           Monkey1.pak da Special Edition (GOG), ou o MONKEY.000/001 soltos
           (o CD original, ou extraidos da Special Edition)
+monkey2   Monkey Island 2: LeChuck's Revenge, os arquivos MONKEY2.000/001 do
+          DOS em ingles (disquete; a GOG traz os mesmos)
           Traducoes do Grupo ScummBR de Traducao (scummbr.org), feitas sobre
           essas edicoes. Os creditos completos estao nos LEIA-ME de cada
           patch original.
@@ -52,6 +54,15 @@ jogo traduzido roda como ela. Com a Special Edition, o ScummVMBR le os
 arquivos classicos de dentro do Monkey1.pak e toca as vozes do Speech.xwb da
 propria pasta audio do jogo; nao precisa extrair nada nem baixar o monkey.sog.
 No CD (arquivos soltos) so vai o texto, porque nao ha de onde tirar as vozes.
+
+O Monkey Island 2 tambem foi traduzido sobre a Ultimate Talkie Edition, e roda
+como ela. Por enquanto so tem o texto: as vozes (monster.sou, 268 MB) nao vao
+no ScummVMBR.
+
+O Monkey Island 1 de disquete (VGA, 000.LFL e DISK01.LEC...) nao entra: ele e
+um formato mais antigo do SCUMM (versao 4), e a traducao e dos arquivos do CD
+(versao 5), que tem os scripts reescritos. Um patch de um para o outro seria
+o jogo inteiro.
 
 A tabela que liga cada fala da traducao a fala do Speech.xwb fica em
 engines/scumm/monkey1_vozes.inc, e so tem numeros e nomes, nenhum audio. Para
@@ -88,6 +99,7 @@ Com o jogo original numa pasta e o ja traduzido em outra:
      ... ING PTBR dists/traducoes/loom 000.lfl 902.lfl disk01.lec
      ... ING PTBR dists/traducoes/samnmax samnmax.000 samnmax.001
      ... ING PTBR dists/traducoes/monkey MONKEY.000 MONKEY.001
+     ... ING PTBR dists/traducoes/monkey2 monkey2.000 monkey2.001
      ... ING/DAT PTBR/DAT dists/traducoes/kyra1 *.emc *.cps *.wsa *.fnt credits.txt kyra.dat
      ... ING PTBR dists/traducoes/kyra2 *.emc *.fmc *.gmc *.dle *.eng *.cps *.wsa *.fnt *.csh kyra.dat
    Um arquivo que so existe na pasta traduzida vira "arquivo novo". O
