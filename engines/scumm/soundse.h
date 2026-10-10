@@ -78,6 +78,9 @@ public:
 	Audio::SeekableAudioStream *getAudioStreamFromIndex(int32 index, SoundSEType type);
 	Audio::SeekableAudioStream *getAudioStreamFromOffset(uint32 offset, SoundSEType type);
 
+	// ScummVMBR: index of a speech line of the Speech.xwb by its name, or -1
+	int32 getSpeechIndexByName(const Common::String &name) const;
+
 	int32 handleMISESpeech(const char *msgString,
 								const char *speechFilenameSubstitution,
 								uint16 roomNumber,

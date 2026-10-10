@@ -1068,6 +1068,8 @@ Common::Error ScummEngine::init() {
 			if (_game.id == GID_MONKEY) {
 				_game.features |= GF_ULTIMATE_TALKIE;
 				if (monkeySE) {
+					// The voices come from the Speech.xwb in the audio folder
+					_monkeyTraducaoVozes = true;
 					_game.features &= ~GF_DOUBLEFINE_PAK;
 					_filenamePattern.pattern = "monkey.%03d";
 					_filenamePattern.genMethod = kGenDiskNum;
@@ -1103,7 +1105,7 @@ Common::Error ScummEngine::init() {
 		SearchMan.addSubDirectoryMatching(gameDataDir, "rooms");
 	}
 
-	if ((_game.id == GID_MONKEY || _game.id == GID_MONKEY2) && (_game.features & GF_DOUBLEFINE_PAK)) {
+	if ((_game.id == GID_MONKEY || _game.id == GID_MONKEY2) && ((_game.features & GF_DOUBLEFINE_PAK) || _monkeyTraducaoVozes)) {
 		// This is for the DoubleFine SE versions of Monkey Island 1 and 2
 		SearchMan.addSubDirectoryMatching(gameDataDir, "audio");
 	}

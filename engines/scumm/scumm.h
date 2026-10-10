@@ -695,6 +695,10 @@ public:
 
 	bool _isIndy4Jap = false;
 
+	// ScummVMBR: the translated Monkey Island 1 Special Edition speaks with
+	// the lines of the player's own Speech.xwb (see Sound::startTalkSound()).
+	bool _monkeyTraducaoVozes = false;
+
 protected:
 	Dialog *_pauseDialog = nullptr;
 	Dialog *_messageDialog = nullptr;
@@ -748,8 +752,7 @@ protected:
 	int _guiCursorAnimCounter = 0;
 	int _v5VoiceMode = 0;
 
-	// ScummVMBR: the built-in pt-BR translation is applied. The text is then
-	// always shown, so "Voice Only" turns into "Voice and Text".
+	// ScummVMBR: the built-in pt-BR translation is applied
 	bool _traducaoPtBr = false;
 
 	// Fake flags just for sub v5 GUIs

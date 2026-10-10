@@ -48,9 +48,19 @@ monkey    The Secret of Monkey Island, os arquivos classicos em ingles: o
 
 No Monkey Island 1, a traducao foi feita sobre a Ultimate Talkie Edition
 v1.02 (a versao com vozes feita por fas em cima da Special Edition), entao o
-jogo traduzido roda como ela. Por enquanto vai so o texto: as vozes ficam no
-monkey.sog, que nao vai no ScummVMBR. Com a Special Edition, o ScummVMBR le
-os arquivos classicos de dentro do Monkey1.pak; nao precisa extrair nada.
+jogo traduzido roda como ela. Com a Special Edition, o ScummVMBR le os
+arquivos classicos de dentro do Monkey1.pak e toca as vozes do Speech.xwb da
+propria pasta audio do jogo; nao precisa extrair nada nem baixar o monkey.sog.
+No CD (arquivos soltos) so vai o texto, porque nao ha de onde tirar as vozes.
+
+A tabela que liga cada fala da traducao a fala do Speech.xwb fica em
+engines/scumm/monkey1_vozes.inc, e so tem numeros e nomes, nenhum audio. Para
+refaze-la (so se o monkey.sog ou a traducao mudarem), com numpy e soundfile:
+
+   python devtools/scummbr/gerar_vozes_monkey1.py <monkey.sog> <audio/Speech.xwb>
+
+Umas 80 falas que a UTE montou emendando outras (precos do Stan, "Rum. Jam.")
+nao existem no Speech.xwb e ficam sem voz.
 
 No Kyrandia, a traducao sao arquivos soltos que o jogo le antes dos pacotes
 (.PAK): eles vao como "arquivos novos". Os textos do kyra.dat (nomes de

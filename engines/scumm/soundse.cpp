@@ -749,6 +749,10 @@ int32 SoundSE::getAppropriateSpeechCue(const char *msgString, const char *speech
 	return bestScoreIdx;
 }
 
+int32 SoundSE::getSpeechIndexByName(const Common::String &name) const {
+	return _nameToIndexMISpeech.contains(name) ? (int32)_nameToIndexMISpeech.getVal(name) : -1;
+}
+
 Audio::SeekableAudioStream *SoundSE::getAudioStreamFromOffset(uint32 offset, SoundSEType type) {
 	int32 index = getSoundIndexFromOffset(offset);
 

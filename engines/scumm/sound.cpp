@@ -51,6 +51,24 @@ struct MP3OffsetTable {					/* Compressed Sound (.SO3) */
 };
 
 
+// ScummVMBR: kMonkeyTraducaoVoices, made by devtools/scummbr/gerar_vozes_monkey1.py
+#include "scumm/monkey1_vozes.inc"
+
+// The speech line of the Speech.xwb for a speech offset of the translated
+// Monkey Island 1, or nullptr if the line has none.
+static const char *monkeyTraducaoVoice(uint32 offset) {
+	uint lo = 0;
+	uint hi = ARRAYSIZE(kMonkeyTraducaoVoices);
+	while (lo < hi) {
+		const uint mid = (lo + hi) / 2;
+		if (kMonkeyTraducaoVoices[mid].offset < offset)
+			lo = mid + 1;
+		else
+			hi = mid;
+	}
+	return lo < ARRAYSIZE(kMonkeyTraducaoVoices) && kMonkeyTraducaoVoices[lo].offset == offset ? kMonkeyTraducaoVoices[lo].name : nullptr;
+}
+
 Sound::Sound(ScummEngine *parent, Audio::Mixer *mixer, bool useReplacementAudioTracks)
 	:
 	_vm(parent),
@@ -87,7 +105,8 @@ Sound::Sound(ScummEngine *parent, Audio::Mixer *mixer, bool useReplacementAudioT
 	// Initialize the SE sound engine for all doublefine packed games,
 	// except for Maniac Mansion (within DOTT), which doesn't have
 	// associated SE resources in the PAK file.
-	if (_vm->_game.features & GF_DOUBLEFINE_PAK && _vm->_game.id != GID_MANIAC) {
+	// ScummVMBR: also the translated Monkey Island 1 Special Edition, for its speech.
+	if ((_vm->_game.features & GF_DOUBLEFINE_PAK || _vm->_monkeyTraducaoVozes) && _vm->_game.id != GID_MANIAC) {
 		_soundSE = new SoundSE(_vm, _mixer);
 		_useRemasteredAudio = ConfMan.getBool("use_remastered_audio");
 		if (_vm->_game.id == GID_MONKEY || _vm->_game.id == GID_MONKEY2)
@@ -629,6 +648,26 @@ void Sound::startTalkSound(uint32 offset, uint32 length, int mode, Audio::SoundH
 				file.release()->close();
 			}
 		}
+		return;
+	} else if (_vm->_monkeyTraducaoVozes) {
+		// ScummVMBR: Monkey Island 1 with the built-in pt-BR translation. The
+		// scripts are the Ultimate Talkie Edition's, which find the speech by
+		// an offset. The table says which line of the Special Edition's
+		// Speech.xwb that is.
+		const char *name = monkeyTraducaoVoice(offset);
+		if (_vm->_voiceMode == 2 || !name)
+			return;
+
+		if (_soundSE && !_soundsPaused && _mixer->isReady()) {
+			const int32 index = _soundSE->getSpeechIndexByName(name);
+			Audio::AudioStream *input = index >= 0 ? _soundSE->getAudioStreamFromIndex(index, kSoundSETypeSpeech) : nullptr;
+
+			_digiSndMode |= mode;
+
+			if (input)
+				_mixer->playStream(mode == DIGI_SND_MODE_SFX ? Audio::Mixer::kSFXSoundType : Audio::Mixer::kSpeechSoundType, handle, input, id);
+		}
+
 		return;
 	} else if (shouldInjectMISEAudio()) {
 		// MI1 and MI2 SE
