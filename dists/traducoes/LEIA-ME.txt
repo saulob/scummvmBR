@@ -42,8 +42,9 @@ kyra2     The Legend of Kyrandia: Hand of Fate, CD em ingles (GOG)
 monkey    The Secret of Monkey Island, os arquivos classicos em ingles: o
           Monkey1.pak da Special Edition (GOG), ou o MONKEY.000/001 soltos
           (o CD original, ou extraidos da Special Edition)
-monkey2   Monkey Island 2: LeChuck's Revenge, os arquivos MONKEY2.000/001 do
-          DOS em ingles (disquete; a GOG traz os mesmos)
+monkey2   Monkey Island 2: LeChuck's Revenge, os arquivos classicos em ingles:
+          o Monkey2.pak da Special Edition (GOG), ou o MONKEY2.000/001 soltos
+          (o disquete DOS original, ou extraidos da Special Edition)
           Traducoes do Grupo ScummBR de Traducao (scummbr.org), feitas sobre
           essas edicoes. Os creditos completos estao nos LEIA-ME de cada
           patch original.
@@ -56,22 +57,26 @@ propria pasta audio do jogo; nao precisa extrair nada nem baixar o monkey.sog.
 No CD (arquivos soltos) so vai o texto, porque nao ha de onde tirar as vozes.
 
 O Monkey Island 2 tambem foi traduzido sobre a Ultimate Talkie Edition, e roda
-como ela. Por enquanto so tem o texto: as vozes (monster.sou, 268 MB) nao vao
-no ScummVMBR.
+como ela. Com a Special Edition, o ScummVMBR le os arquivos classicos de dentro
+do Monkey2.pak e toca as vozes do Speech.xwb da pasta audio do jogo; nao precisa
+baixar o monster.sou (268 MB). Com o disquete (arquivos soltos) so vai o texto.
 
 O Monkey Island 1 de disquete (VGA, 000.LFL e DISK01.LEC...) nao entra: ele e
 um formato mais antigo do SCUMM (versao 4), e a traducao e dos arquivos do CD
 (versao 5), que tem os scripts reescritos. Um patch de um para o outro seria
 o jogo inteiro.
 
-A tabela que liga cada fala da traducao a fala do Speech.xwb fica em
-engines/scumm/monkey1_vozes.inc, e so tem numeros e nomes, nenhum audio. Para
-refaze-la (so se o monkey.sog ou a traducao mudarem), com numpy e soundfile:
+As tabelas que ligam cada fala da traducao a fala do Speech.xwb ficam em
+engines/scumm/monkey1_vozes.inc e monkey2_vozes.inc, e so tem numeros e nomes,
+nenhum audio. Para refaze-las (so se o monkey.sog, o monster.sou ou a traducao
+mudarem), com numpy (e soundfile, no Monkey 1):
 
    python devtools/scummbr/gerar_vozes_monkey1.py <monkey.sog> <audio/Speech.xwb>
+   python devtools/scummbr/gerar_vozes_monkey2.py <monster.sou> <pasta audio>
 
-Umas 80 falas que a UTE montou emendando outras (precos do Stan, "Rum. Jam.")
-nao existem no Speech.xwb e ficam sem voz.
+Umas 80 falas do Monkey 1 que a UTE montou emendando outras (precos do Stan,
+"Rum. Jam.") nao existem no Speech.xwb e ficam sem voz. No Monkey 2 sao umas
+230 (de 6800), que a UTE editou e nao deu para ligar com certeza.
 
 No Kyrandia, a traducao sao arquivos soltos que o jogo le antes dos pacotes
 (.PAK): eles vao como "arquivos novos". Os textos do kyra.dat (nomes de

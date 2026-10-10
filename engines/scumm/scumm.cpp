@@ -1047,14 +1047,19 @@ Common::Error ScummEngine::init() {
 	// for (the ones that show it); the game files are checked here anyway.
 	if (isTraducaoPtBrEdition(_game.gameid, ConfMan.get("extra"), ConfMan.get("language")) &&
 			ConfMan.getBool("traducao_ptbr")) {
-		// The Monkey Island 1 translation patches the classic files, which
-		// the Special Edition only has inside Monkey1.pak: they are served
-		// from there, with the names of the classic CD release.
-		const bool monkeySE = _game.id == GID_MONKEY && (_game.features & GF_DOUBLEFINE_PAK);
+		// The Monkey Island translations patch the classic files, which the
+		// Special Edition only has inside Monkey1.pak and Monkey2.pak: they
+		// are served from there, with the names of the classic releases.
+		const bool monkeySE = (_game.id == GID_MONKEY || _game.id == GID_MONKEY2) && (_game.features & GF_DOUBLEFINE_PAK);
 		if (monkeySE) {
 			PAKClassicArchive *pak = new PAKClassicArchive(this, Common::Path(_filenamePattern.pattern));
-			pak->addFile("monkey1.000", "MONKEY.000");
-			pak->addFile("monkey1.001", "MONKEY.001");
+			if (_game.id == GID_MONKEY2) {
+				pak->addFile("monkey2.000", "monkey2.000");
+				pak->addFile("monkey2.001", "monkey2.001");
+			} else {
+				pak->addFile("monkey1.000", "MONKEY.000");
+				pak->addFile("monkey1.001", "MONKEY.001");
+			}
 			SearchMan.add(kMonkeySEClassicArchive, pak, kMonkeySEClassicArchivePriority);
 		}
 
@@ -1063,16 +1068,16 @@ Common::Error ScummEngine::init() {
 			_traducaoPtBr = true;
 
 			// The translated Monkey Island games are the Ultimate Talkie
-			// Edition (no voices for Monkey Island 2), so they run as one.
-			// The Monkey Island 1 Special Edition then reads the translated
-			// MONKEY.000/001 instead of Monkey1.pak.
+			// Edition, so they run as one. The Special Edition then reads
+			// the translated files instead of the .pak, and the voices come
+			// from the Speech.xwb in its audio folder. The other editions
+			// have no text-to-speech voices to read, so they are text only.
 			if (_game.id == GID_MONKEY || _game.id == GID_MONKEY2) {
 				_game.features |= GF_ULTIMATE_TALKIE;
 				if (monkeySE) {
-					// The voices come from the Speech.xwb in the audio folder
 					_monkeyTraducaoVozes = true;
 					_game.features &= ~GF_DOUBLEFINE_PAK;
-					_filenamePattern.pattern = "monkey.%03d";
+					_filenamePattern.pattern = _game.id == GID_MONKEY2 ? "monkey2.%03d" : "monkey.%03d";
 					_filenamePattern.genMethod = kGenDiskNum;
 				}
 			}

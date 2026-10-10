@@ -51,22 +51,26 @@ struct MP3OffsetTable {					/* Compressed Sound (.SO3) */
 };
 
 
-// ScummVMBR: kMonkeyTraducaoVoices, made by devtools/scummbr/gerar_vozes_monkey1.py
+// ScummVMBR: kMonkeyTraducaoVoices, made by devtools/scummbr/gerar_vozes_monkey1.py,
+// and kMonkey2TraducaoVoices, made by devtools/scummbr/gerar_vozes_monkey2.py
 #include "scumm/monkey1_vozes.inc"
+#include "scumm/monkey2_vozes.inc"
 
 // The speech line of the Speech.xwb for a speech offset of the translated
-// Monkey Island 1, or nullptr if the line has none.
-static const char *monkeyTraducaoVoice(uint32 offset) {
+// Monkey Island 1 or 2, or nullptr if the line has none.
+static const char *monkeyTraducaoVoice(bool monkey2, uint32 offset) {
+	const MonkeyTraducaoVoice *voices = monkey2 ? kMonkey2TraducaoVoices : kMonkeyTraducaoVoices;
 	uint lo = 0;
-	uint hi = ARRAYSIZE(kMonkeyTraducaoVoices);
+	uint hi = monkey2 ? ARRAYSIZE(kMonkey2TraducaoVoices) : ARRAYSIZE(kMonkeyTraducaoVoices);
+	const uint size = hi;
 	while (lo < hi) {
 		const uint mid = (lo + hi) / 2;
-		if (kMonkeyTraducaoVoices[mid].offset < offset)
+		if (voices[mid].offset < offset)
 			lo = mid + 1;
 		else
 			hi = mid;
 	}
-	return lo < ARRAYSIZE(kMonkeyTraducaoVoices) && kMonkeyTraducaoVoices[lo].offset == offset ? kMonkeyTraducaoVoices[lo].name : nullptr;
+	return lo < size && voices[lo].offset == offset ? voices[lo].name : nullptr;
 }
 
 Sound::Sound(ScummEngine *parent, Audio::Mixer *mixer, bool useReplacementAudioTracks)
@@ -650,11 +654,11 @@ void Sound::startTalkSound(uint32 offset, uint32 length, int mode, Audio::SoundH
 		}
 		return;
 	} else if (_vm->_monkeyTraducaoVozes) {
-		// ScummVMBR: Monkey Island 1 with the built-in pt-BR translation. The
-		// scripts are the Ultimate Talkie Edition's, which find the speech by
-		// an offset. The table says which line of the Special Edition's
+		// ScummVMBR: Monkey Island 1 or 2 with the built-in pt-BR translation.
+		// The scripts are the Ultimate Talkie Edition's, which find the speech
+		// by an offset. The table says which line of the Special Edition's
 		// Speech.xwb that is.
-		const char *name = monkeyTraducaoVoice(offset);
+		const char *name = monkeyTraducaoVoice(_vm->_game.id == GID_MONKEY2, offset);
 		if (_vm->_voiceMode == 2 || !name)
 			return;
 
