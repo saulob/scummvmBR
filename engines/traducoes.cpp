@@ -21,7 +21,7 @@
 
 #include "common/archive.h"
 #include "common/array.h"
-#include "common/compression/deflate.h"
+#include "common/compression/unzip.h"
 #include "common/config-manager.h"
 #include "common/debug.h"
 #include "common/fs.h"
@@ -45,6 +45,7 @@ static const int kArchivePriority = 10;
 static const char kPatchMagic[] = "SBRPTCH1";
 static const char kNewFileMagic[] = "SBRNOVO1"; // A file the game does not have
 static const char kPatchSuffix[] = ".patch";
+static const char kPackageSuffix[] = ".traducao"; // A ZIP file with the .patch of a game
 
 enum {
 	kOpCopy = 0, // Bytes copied from the original file
@@ -290,82 +291,92 @@ static PatchedFile *loadPatch(Common::SeekableReadStream &in, const Common::Stri
 	return file.release();
 }
 
-// A patch built into the executable, compressed with zlib
-struct EmbeddedPatch {
+// A translation built into the executable: the <gameid>.traducao package
+struct EmbeddedTraducao {
 	const char *gameId;
-	const char *fileName;   // The game file it patches
 	const byte *data;
-	uint32 packedSize;
-	uint32 size;            // Of the .patch, once uncompressed
+	uint32 size;
 };
 
-// kEmbeddedPatches, made from dists/traducoes by gerar_traducao.py
+// kEmbeddedTraducoes, made from dists/traducoes by gerar_traducao.py
 #include "engines/traducoes_embutidas.inc"
+
+// Loads every <FILE>.patch of a .traducao package into the archive. Takes
+// ownership of the stream. Returns how many files it loaded, or -1 with the
+// reason.
+static int loadPackage(Common::SeekableReadStream *stream, const Common::String &gameId, TraducaoArchive &archive, Common::U32String &reason) {
+	Common::ScopedPtr<Common::Archive> package(Common::makeZipArchive(stream));
+	Common::ArchiveMemberList members;
+	if (!package || package->listMembers(members) == 0) {
+		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), gameId.c_str(), kPackageSuffix);
+		return -1;
+	}
+
+	int count = 0;
+	for (const Common::ArchiveMemberPtr &member : members) {
+		Common::String fileName = member->getFileName();
+		if (!fileName.hasSuffixIgnoreCase(kPatchSuffix))
+			continue;
+		fileName.erase(fileName.size() - strlen(kPatchSuffix));
+
+		Common::ScopedPtr<Common::SeekableReadStream> in(member->createReadStream());
+		PatchedFile *file = nullptr;
+		if (in)
+			file = loadPatch(*in, fileName, reason);
+		else
+			reason = Common::U32String::format(_("The translation file %s%s is corrupted."), fileName.c_str(), kPatchSuffix);
+		if (!file)
+			return -1;
+
+		archive.addFile(Common::Path(fileName), PatchedFilePtr(file));
+		count++;
+	}
+
+	if (!count) {
+		reason = Common::U32String::format(_("The translation file %s%s is corrupted."), gameId.c_str(), kPackageSuffix);
+		return -1;
+	}
+	return count;
+}
 
 bool mountTraducao(const Common::String &gameId, Common::U32String &reason) {
 	unmountTraducao();
 
 	Common::ScopedPtr<TraducaoArchive> archive(new TraducaoArchive());
-	int count = 0;
-	const char *source = "pasta";
+	int count;
+	const char *source;
 
-	// A traducoes/<gameid> folder next to the executable replaces the built-in
-	// translation of the game, so a new one can be tried without rebuilding.
+	// A traducoes/<gameid>.traducao next to the executable replaces the
+	// built-in translation of the game, so a new one can be tried without
+	// rebuilding.
 	Common::Path root = ConfMan.getPath("traducoespath");
 	if (root.empty())
 		root = Common::Path("traducoes");
-	const Common::FSNode dir = Common::FSNode(root).getChild(gameId);
+	const Common::FSNode package = Common::FSNode(root).getChild(gameId + kPackageSuffix);
 
-	Common::FSList children;
-	if (dir.isDirectory())
-		dir.getChildren(children, Common::FSNode::kListFilesOnly);
-
-	for (const Common::FSNode &child : children) {
-		Common::String fileName = child.getFileName();
-		if (!fileName.hasSuffixIgnoreCase(kPatchSuffix))
-			continue;
-		fileName.erase(fileName.size() - strlen(kPatchSuffix));
-
-		Common::ScopedPtr<Common::SeekableReadStream> in(child.createReadStream());
-		PatchedFile *file = in ? loadPatch(*in, fileName, reason) : nullptr;
-		if (!file) {
-			if (!in)
-				reason = Common::U32String::format(_("Could not read %s."), child.getPath().toString(Common::Path::kNativeSeparator).c_str());
+	if (package.exists() && !package.isDirectory()) {
+		source = "pasta";
+		Common::SeekableReadStream *stream = package.createReadStream();
+		if (!stream) {
+			reason = Common::U32String::format(_("Could not read %s."), package.getPath().toString(Common::Path::kNativeSeparator).c_str());
 			warning("Traducao de %s nao aplicada: %s", gameId.c_str(), reason.encode().c_str());
 			return false;
 		}
-
-		archive->addFile(Common::Path(fileName), PatchedFilePtr(file));
-		count++;
-	}
-
-	if (!count) {
+		count = loadPackage(stream, gameId, *archive, reason);
+	} else {
 		source = "embutida";
-		for (const EmbeddedPatch *patch = kEmbeddedPatches; patch->gameId; patch++) {
-			if (gameId != patch->gameId)
-				continue;
-
-			Common::Array<byte> data(patch->size);
-			unsigned long size = patch->size;
-			PatchedFile *file = nullptr;
-			if (Common::inflateZlib(data.data(), &size, patch->data, patch->packedSize) && size == patch->size) {
-				Common::MemoryReadStream in(data.data(), data.size());
-				file = loadPatch(in, patch->fileName, reason);
-			} else {
-				reason = Common::U32String::format(_("The translation file %s%s is corrupted."), patch->fileName, kPatchSuffix);
-			}
-			if (!file) {
-				warning("Traducao de %s nao aplicada: %s", gameId.c_str(), reason.encode().c_str());
-				return false;
-			}
-
-			archive->addFile(Common::Path(patch->fileName), PatchedFilePtr(file));
-			count++;
+		const EmbeddedTraducao *traducao = kEmbeddedTraducoes;
+		while (traducao->gameId && gameId != traducao->gameId)
+			traducao++;
+		if (!traducao->gameId) {
+			reason = Common::U32String::format(_("This ScummVMBR has no translation for %s."), gameId.c_str());
+			warning("Traducao de %s nao aplicada: %s", gameId.c_str(), reason.encode().c_str());
+			return false;
 		}
+		count = loadPackage(new Common::MemoryReadStream(traducao->data, traducao->size), gameId, *archive, reason);
 	}
 
-	if (!count) {
-		reason = Common::U32String::format(_("This ScummVMBR has no translation for %s."), gameId.c_str());
+	if (count < 0) {
 		warning("Traducao de %s nao aplicada: %s", gameId.c_str(), reason.encode().c_str());
 		return false;
 	}

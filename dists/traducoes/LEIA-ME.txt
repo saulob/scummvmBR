@@ -3,7 +3,9 @@
 =====================================================================
 
 As traducoes pt-BR vao DENTRO do executavel do ScummVMBR. Esta pasta e a
-fonte delas no repositorio: uma subpasta por jogo, com os .patch.
+fonte delas no repositorio: um arquivo por jogo, <jogo>.traducao, com o id
+do jogo no ScummVM no nome. Cada .traducao e um ZIP com os .patch do jogo,
+um por arquivo traduzido; abre no 7-Zip para ver o que tem dentro.
 
 COMO O JOGADOR USA
 ------------------
@@ -70,8 +72,9 @@ Com o jogo original numa pasta e o ja traduzido em outra:
    Um arquivo que so existe na pasta traduzida vira "arquivo novo". O
    kyra.dat vira so os registros traduzidos do jogo da pasta de saida.
 
-Os dois jeitos regravam os .patch daqui e o engines/traducoes_embutidas.inc.
-Depois, recompile o ScummVMBR e faca o commit dos dois.
+Os dois jeitos regravam o <jogo>.traducao inteiro (com os .patch gerados
+nessa vez) e o engines/traducoes_embutidas.inc. Depois, recompile o
+ScummVMBR e faca o commit dos dois.
 
 Um jogo novo tambem precisa do checkbox na engine dele: no AGOS e no
 Kyrandia, a opcao GAMEOPTION_TRADUCAO_PTBR nas entradas do detection_tables.h;
@@ -79,15 +82,15 @@ na SCUMM, a edicao em isTraducaoPtBrEdition() (engines/scumm/metaengine.cpp).
 
 TESTAR SEM RECOMPILAR
 ---------------------
-Uma pasta "traducoes" ao lado do executavel tem prioridade sobre a traducao
-embutida. Gere os .patch direto nela:
+Um <jogo>.traducao numa pasta "traducoes" ao lado do executavel tem
+prioridade sobre a traducao embutida. Gere o pacote direto nela:
 
    python devtools/scummbr/gerar_traducao.py <pasta_do_jogo> <pasta_do_exe>/traducoes/<jogo>
 
-(ou com <original> <traduzido> antes da pasta de saida, como acima). A pasta
-de teste guarda os .patch sem comprimir; so os embutidos sao comprimidos.
+(ou com <original> <traduzido> antes da saida, como acima). Tambem serve
+copiar para la um .traducao daqui.
 
-Apague a pasta depois do teste, senao ela continua valendo no lugar da
+Apague o arquivo depois do teste, senao ele continua valendo no lugar da
 traducao embutida.
 
 TEXTOS DA INTERFACE

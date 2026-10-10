@@ -1,11 +1,15 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Gera os .patch das traducoes embutidas do ScummVMBR (dists/traducoes/<jogo>).
+Gera as traducoes embutidas do ScummVMBR (dists/traducoes/<jogo>.traducao).
 
 Compara cada arquivo traduzido do jogo com o original e grava so a diferenca,
 em <ARQUIVO>.patch. Com a opcao "Traduzir o jogo" marcada, o ScummVMBR aplica o
 .patch em memoria (engines/traducoes.cpp); os arquivos do jogo nunca mudam.
+
+Todos os .patch de um jogo vao num arquivo so, <jogo>.traducao, que e um ZIP
+(abre no 7-Zip para ver o que tem dentro). Cada execucao regrava o pacote
+inteiro com os .patch gerados nela.
 
 O original pode vir de dois jeitos:
   - os patchers de traducao (simon1_ptbr, simon2_ptbr...) reescrevem os
@@ -13,14 +17,18 @@ O original pode vir de dois jeitos:
   - uma pasta com o jogo original e outra com o jogo ja traduzido, como nos
     pacotes que ja vem com a traducao aplicada.
 
-Os .patch de dists/traducoes vao dentro do executavel: no fim, este script
-sempre regrava o engines/traducoes_embutidas.inc com todos eles, comprimidos
-com zlib. Depois e so recompilar o ScummVMBR.
+Os .traducao de dists/traducoes vao dentro do executavel: no fim, este
+script sempre regrava o engines/traducoes_embutidas.inc com todos eles. Depois
+e so recompilar o ScummVMBR.
 
 USO
-  python gerar_traducao.py PASTA_DO_JOGO_TRADUZIDO PASTA_DE_SAIDA
-  python gerar_traducao.py PASTA_ORIGINAL PASTA_TRADUZIDA PASTA_DE_SAIDA [ARQUIVO...]
+  python gerar_traducao.py PASTA_DO_JOGO_TRADUZIDO SAIDA
+  python gerar_traducao.py PASTA_ORIGINAL PASTA_TRADUZIDA SAIDA [ARQUIVO...]
   python gerar_traducao.py --embutir      (so regrava o .inc)
+
+  SAIDA e o pacote do jogo, com ou sem o .traducao no fim
+  (dists/traducoes/kyra1 grava dists/traducoes/kyra1.traducao). O nome do
+  pacote e o id do jogo no ScummVM (simon1, tentacle, kyra1...).
 
   Com tres pastas, ARQUIVO sao os arquivos do jogo a comparar, e aceitam
   * e ? ("*.lfl"); maiusculas e minusculas tanto faz. Sem ARQUIVO, entram
@@ -34,7 +42,7 @@ USO
 
   O kyra.dat traduzido (Kyrandia) nao entra inteiro: entram so os registros
   dele que diferem do dists/engine-data/kyra.dat, e so os do jogo da
-  PASTA_DE_SAIDA (kyra1, kyra2 ou kyra3), cada um como arquivo novo com o nome
+  SAIDA (kyra1, kyra2 ou kyra3), cada um como arquivo novo com o nome
   do registro (00010101...). O Kyrandia le esses registros pelo nome e da
   prioridade aos arquivos soltos, entao eles valem no lugar dos do kyra.dat,
   seja qual for a versao dele.
@@ -49,8 +57,8 @@ USO
   Para o Kyrandia 1, que fica na pasta DAT:
     python devtools/scummbr/gerar_traducao.py ING/DAT PTBR/DAT dists/traducoes/kyra1 *.emc *.cps *.wsa *.fnt credits.txt kyra.dat
 
-  Para testar sem recompilar, grave numa pasta "traducoes" ao lado do
-  executavel; ela tem prioridade sobre a traducao embutida:
+  Para testar sem recompilar, grave o pacote numa pasta "traducoes" ao lado
+  do executavel; ele tem prioridade sobre a traducao embutida:
     python devtools/scummbr/gerar_traducao.py D:/jogos/simon1 S:/scummvmBR/scummvm/traducoes/simon1
 
 FORMATO DO .patch (little endian, lido por engines/traducoes.cpp)
@@ -75,7 +83,7 @@ import io
 import os
 import struct
 import sys
-import zlib
+import zipfile
 
 MAGICO = b"SBRPTCH1"
 MAGICO_NOVO = b"SBRNOVO1"
@@ -84,6 +92,7 @@ DADOS = 1
 
 RAIZ = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 TRADUCOES = os.path.join(RAIZ, "dists", "traducoes")
+PACOTE = ".traducao"
 KYRA_DAT = os.path.join(RAIZ, "dists", "engine-data", "kyra.dat")
 INC = os.path.join(RAIZ, "engines", "traducoes_embutidas.inc")
 
@@ -200,42 +209,56 @@ def ler(caminho):
         return f.read()
 
 
-def embutir():
-    """Grava no .inc todos os dists/traducoes/<jogo>/*.patch, para irem dentro
-    do executavel."""
-    patches = []
-    for jogo in sorted(os.listdir(TRADUCOES)):
-        pasta = os.path.join(TRADUCOES, jogo)
-        if not os.path.isdir(pasta):
-            continue
-        for nome in sorted(os.listdir(pasta)):
-            if nome.lower().endswith(".patch"):
-                patches.append((jogo, nome[:-len(".patch")], ler(os.path.join(pasta, nome))))
+def ler_pacote(caminho):
+    """{nome: .patch} de um <jogo>.traducao, sem o .patch no nome."""
+    with zipfile.ZipFile(caminho) as z:
+        return dict((n[:-len(".patch")], z.read(n)) for n in z.namelist() if n.lower().endswith(".patch"))
 
-    # Comprimidos, o .inc e o executavel ficam bem menores. Em decimal e sem
-    # espacos, o .inc tambem fica menor do que em hexadecimal.
-    comprimidos = [zlib.compress(dados, 9) for _j, _a, dados in patches]
+
+def gravar_pacote(caminho, patches):
+    """Grava o <jogo>.traducao: um ZIP com um <ARQUIVO>.patch por arquivo. A
+    data e o sistema fixos fazem o mesmo conteudo dar sempre o mesmo pacote."""
+    temporario = caminho + ".tmp"
+    with zipfile.ZipFile(temporario, "w") as z:
+        for nome in sorted(patches, key=str.lower):
+            info = zipfile.ZipInfo(nome + ".patch", date_time=(1980, 1, 1, 0, 0, 0))
+            info.create_system = 0
+            info.external_attr = 0
+            z.writestr(info, patches[nome], compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
+    os.replace(temporario, caminho)
+
+
+def embutir():
+    """Grava no .inc todos os dists/traducoes/<jogo>.traducao, para irem dentro
+    do executavel."""
+    pacotes = []
+    for nome in sorted(os.listdir(TRADUCOES)):
+        if nome.lower().endswith(PACOTE):
+            caminho = os.path.join(TRADUCOES, nome)
+            if not ler_pacote(caminho):
+                raise SystemExit("%s nao tem nenhum .patch" % caminho)
+            pacotes.append((nome[:-len(PACOTE)], ler(caminho)))
 
     with io.open(INC, "w", newline="\n") as f:
         f.write("// Generated by devtools/scummbr/gerar_traducao.py from dists/traducoes. Do not edit.\n")
-        f.write("// Each array is one <FILE>.patch compressed with zlib; gerar_traducao.py documents the format.\n")
-        for (jogo, arquivo, _d), dados in zip(patches, comprimidos):
-            f.write("\nstatic const byte %s[%d] = {\n" % (nome_c(jogo, arquivo), len(dados)))
+        f.write("// Each array is one <gameid>.traducao, a ZIP file with the game's <FILE>.patch;\n")
+        f.write("// gerar_traducao.py documents the format.\n")
+        for jogo, dados in pacotes:
+            f.write("\nstatic const byte %s[%d] = {\n" % (nome_c(jogo), len(dados)))
             for i in range(0, len(dados), 32):
                 f.write("%s,\n" % ",".join("%d" % b for b in dados[i:i + 32]))
             f.write("};\n")
-        f.write("\nstatic const EmbeddedPatch kEmbeddedPatches[] = {\n")
-        for (jogo, arquivo, dados), comprimido in zip(patches, comprimidos):
-            f.write('\t{ "%s", "%s", %s, %d, %d },\n' % (jogo, arquivo, nome_c(jogo, arquivo), len(comprimido), len(dados)))
-        f.write("\t{ nullptr, nullptr, nullptr, 0, 0 }\n};\n")
+        f.write("\nstatic const EmbeddedTraducao kEmbeddedTraducoes[] = {\n")
+        for jogo, dados in pacotes:
+            f.write('\t{ "%s", %s, %d },\n' % (jogo, nome_c(jogo), len(dados)))
+        f.write("\t{ nullptr, nullptr, 0 }\n};\n")
 
-    print("%s: %d patch(es), %d bytes (%d comprimidos)" % (os.path.relpath(INC, RAIZ), len(patches),
-                                                          sum(len(d) for _j, _a, d in patches),
-                                                          sum(len(c) for c in comprimidos)))
+    print("%s: %d jogo(s), %d bytes" % (os.path.relpath(INC, RAIZ), len(pacotes),
+                                       sum(len(d) for _j, d in pacotes)))
 
 
-def nome_c(jogo, arquivo):
-    return "kTraducao_" + "".join(c if c.isalnum() else "_" for c in jogo + "_" + arquivo)
+def nome_c(jogo):
+    return "kTraducao_" + "".join(c if c.isalnum() else "_" for c in jogo)
 
 
 def pares_bkp(jogo):
@@ -307,13 +330,13 @@ def ler_pak(caminho):
                 for i, (nome, inicio) in enumerate(registros))
 
 
-def registros_kyra_dat(traduzido, saida):
+def registros_kyra_dat(traduzido, jogo):
     """(nome, dados) dos registros do kyra.dat traduzido que diferem do kyra.dat
-    do ScummVM, so os do jogo de saida. O INDEX fica de fora."""
+    do ScummVM, so os do jogo. O INDEX fica de fora."""
     jogos = {"kyra1": "0", "kyra2": "1", "kyra3": "2"}
-    jogo = os.path.basename(os.path.normpath(saida)).lower()
+    jogo = jogo.lower()
     if jogo not in jogos:
-        print("kyra.dat: a pasta de saida tem que ser kyra1, kyra2 ou kyra3, nao %s" % jogo)
+        print("kyra.dat: o pacote tem que ser kyra1, kyra2 ou kyra3, nao %s" % jogo)
         return None
     oficial = ler_pak(KYRA_DAT)
     novos = ler_pak(traduzido)
@@ -338,8 +361,14 @@ def main():
     if not pares:
         return 1
 
-    os.makedirs(saida, exist_ok=True)
-    gerados = set()
+    pacote = os.path.normpath(saida)
+    if not pacote.lower().endswith(PACOTE):
+        pacote += PACOTE
+    jogo = os.path.basename(pacote)[:-len(PACOTE)]
+    pasta = os.path.dirname(pacote)
+    if pasta:
+        os.makedirs(pasta, exist_ok=True)
+    gerados = {}
 
     # O kyra.dat vira os registros traduzidos, cada um como arquivo novo
     expandidos = []
@@ -347,7 +376,7 @@ def main():
         if nome.lower() != "kyra.dat":
             expandidos.append((original, traduzido, nome))
             continue
-        registros = registros_kyra_dat(traduzido, saida)
+        registros = registros_kyra_dat(traduzido, jogo)
         if registros is None:
             return 1
         print("%-12s %d registros traduzidos" % (nome, len(registros)))
@@ -361,9 +390,7 @@ def main():
             if aplicar(patch, None) != novo:
                 print("%-12s ERRO: o .patch nao reproduz o arquivo novo" % nome)
                 return 1
-            with io.open(os.path.join(saida, nome + ".patch"), "wb") as f:
-                f.write(patch)
-            gerados.add((nome + ".patch").lower())
+            gerados[nome] = patch
             print("%-12s %9d bytes, arquivo novo" % (nome, len(novo)))
             continue
 
@@ -376,15 +403,23 @@ def main():
         if aplicar(patch, orig) != novo:
             print("%-12s ERRO: o .patch nao reproduz o arquivo traduzido" % nome)
             return 1
-        with io.open(os.path.join(saida, nome + ".patch"), "wb") as f:
-            f.write(patch)
-        gerados.add((nome + ".patch").lower())
+        gerados[nome] = patch
         novos = sum(len(op[1]) for op in ops if op[0] == DADOS)
         print("%-12s %9d bytes de patch (%d bytes novos, %d operacoes)" % (nome, len(patch), novos, len(ops)))
 
-    sobras = [n for n in os.listdir(saida) if n.lower().endswith(".patch") and n.lower() not in gerados]
-    for nome in sobras:
-        print("ATENCAO: %s nao foi gerado agora; apague-o se nao vale mais." % nome)
+    if not gerados:
+        print("Nenhum .patch gerado; %s nao foi alterado." % pacote)
+        return 1
+
+    # O pacote e regravado inteiro: avisa o que saiu dele
+    if os.path.isfile(pacote):
+        atuais = set(n.lower() for n in gerados)
+        for nome in sorted(ler_pacote(pacote)):
+            if nome.lower() not in atuais:
+                print("ATENCAO: %s.patch saiu do pacote (nao foi gerado agora)." % nome)
+
+    gravar_pacote(pacote, gerados)
+    print("%s: %d arquivo(s), %d bytes" % (pacote, len(gerados), os.path.getsize(pacote)))
 
     embutir()
     return 0

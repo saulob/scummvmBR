@@ -32,11 +32,12 @@
  * of the game into the translated one, or adding a <FILE> the game does not
  * have (for engines that read loose files before their packages, like Kyra).
  * They are made by
- * devtools/scummbr/gerar_traducao.py, which also documents the format, and are
- * kept in dists/traducoes/<gameid>/.
+ * devtools/scummbr/gerar_traducao.py, which also documents the format. All the
+ * patches of a game go in one package, dists/traducoes/<gameid>.traducao (a
+ * ZIP file).
  *
- * Those patches are built into the executable (traducoes_embutidas.inc). A
- * traducoes/<gameid>/ folder next to the executable (the "traducoespath"
+ * Those packages are built into the executable (traducoes_embutidas.inc). A
+ * traducoes/<gameid>.traducao next to the executable (the "traducoespath"
  * setting) replaces the built-in translation of that game, to try out a new
  * one without rebuilding.
  *
