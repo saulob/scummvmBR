@@ -308,13 +308,10 @@ int MidiPlayer::open() {
 					_driverMsMusic = createMidiDriverSimon1AdLib("MT_FM.IBK", oplType);
 				} else {
 					// Fallback in case AdLib instrument definitions are missing.
-					GUI::MessageDialog dialog(
-						Common::U32String::format(
-							_("Could not find AdLib instrument definition file\n"
-							  "%s. Without this file,\n"
-							  "the music will not sound the same as the original game."),
-							"MT_FM.IBK"));
-					dialog.runModal();
+					// ScummVMBR: only a log line, no dialog at every start; the
+					// fallback driver plays the music fine.
+					warning("Could not find AdLib instrument definition file MT_FM.IBK; "
+						"the music will not sound the same as the original game");
 
 					_driverMsMusic = new MidiDriver_ADLIB_Multisource(oplType);
 					_driverMsMusic->setInstrumentRemapping(MidiDriver::_mt32ToGm);
@@ -362,13 +359,9 @@ int MidiPlayer::open() {
 					_driverMsSfx = createMidiDriverSimon1AdLib("MT_FM.IBK", oplType);
 				} else {
 					// Fallback in case AdLib instrument definitions are missing.
-					GUI::MessageDialog dialog(
-						Common::U32String::format(
-							_("Could not find AdLib instrument definition file\n"
-							  "%s. Without this file,\n"
-							  "the sound effects will not sound the same as the original game."),
-							"MT_FM.IBK"));
-					dialog.runModal();
+					// ScummVMBR: only a log line, no dialog at every start.
+					warning("Could not find AdLib instrument definition file MT_FM.IBK; "
+						"the sound effects will not sound the same as the original game");
 
 					_driverMsSfx = new MidiDriver_ADLIB_Multisource(oplType);
 					_driverMsSfx->setInstrumentRemapping(MidiDriver::_mt32ToGm);
@@ -440,13 +433,9 @@ int MidiPlayer::open() {
 					delete midpakAdLibStream;
 				} else {
 					// Fallback in case AdLib instrument definitions are missing.
-					GUI::MessageDialog dialog(
-						Common::U32String::format(
-							_("Could not find AdLib instrument definition file\n"
-							  "%s or %s. Without one of these files,\n"
-							  "the music will not sound the same as the original game."),
-							"MIDPAK.AD", "SETUP.SHR"));
-					dialog.runModal();
+					// ScummVMBR: only a log line, no dialog at every start.
+					warning("Could not find AdLib instrument definition file MIDPAK.AD or SETUP.SHR; "
+						"the music will not sound the same as the original game");
 
 					_driverMsMusic = new MidiDriver_ADLIB_Multisource(oplType);
 				}
