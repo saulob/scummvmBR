@@ -106,10 +106,11 @@ bool getApplicationDataDirectory(TCHAR *applicationDataDirectory) {
 		return false;
 	}
 
-	_tcscat(applicationDataDirectory, TEXT("\\ScummVM"));
+	// Separate folder from the original ScummVM, so their settings don't mix
+	_tcscat(applicationDataDirectory, TEXT("\\ScummVMBR"));
 	if (!CreateDirectory(applicationDataDirectory, NULL)) {
 		if (GetLastError() != ERROR_ALREADY_EXISTS) {
-			error("Cannot create ScummVM application data folder");
+			error("Cannot create ScummVMBR application data folder");
 		}
 	}
 

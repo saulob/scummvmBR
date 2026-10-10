@@ -128,10 +128,8 @@ void OSystem_Win32::initBackend() {
 		_savefileManager = new WindowsSaveFileManager(_isPortable);
 
 #if defined(USE_SPARKLE)
-	// Initialize updates manager
-	if (!_isPortable) {
-		_updateManager = new Win32UpdateManager((SdlWindow_Win32*)_window);
-	}
+	// Updates manager disabled in ScummVM BR: the appcast points to the
+	// original ScummVM releases, which would replace this build.
 #endif
 
 	// Initialize text to speech
@@ -318,7 +316,7 @@ Common::Path OSystem_Win32::getScreenshotsPath() {
 			}
 			return Common::Path();
 		}
-		_tcscat(picturesPath, TEXT("\\ScummVM Screenshots\\"));
+		_tcscat(picturesPath, TEXT("\\ScummVMBR Screenshots\\"));
 	}
 
 	// If the directory already exists (as it should in most cases),
@@ -347,27 +345,11 @@ Common::Path OSystem_Win32::getDefaultConfigFileName() {
 		Win32::getProcessDirectory(configFile, MAX_PATH);
 		_tcscat(configFile, TEXT("\\" DEFAULT_CONFIG_FILE));
 	} else {
-		// Use the Application Data directory of the user profile
+		// Use the Application Data directory of the user profile.
+		// The legacy config file in the Windows directory is not checked,
+		// since it would belong to an original ScummVM installation.
 		if (Win32::getApplicationDataDirectory(configFile)) {
 			_tcscat(configFile, TEXT("\\" DEFAULT_CONFIG_FILE));
-
-			FILE *tmp = nullptr;
-			if ((tmp = _tfopen(configFile, TEXT("r"))) == nullptr) {
-				// Check windows directory
-				TCHAR oldConfigFile[MAX_PATH];
-				uint ret = GetWindowsDirectory(oldConfigFile, MAX_PATH);
-				if (ret == 0 || ret > MAX_PATH)
-					error("Cannot retrieve the path of the Windows directory");
-
-				_tcscat(oldConfigFile, TEXT("\\" DEFAULT_CONFIG_FILE));
-				if ((tmp = _tfopen(oldConfigFile, TEXT("r")))) {
-					_tcscpy(configFile, oldConfigFile);
-
-					fclose(tmp);
-				}
-			} else {
-				fclose(tmp);
-			}
 		} else {
 			// Check windows directory
 			uint ret = GetWindowsDirectory(configFile, MAX_PATH);
@@ -401,20 +383,14 @@ Common::Path OSystem_Win32::getDefaultLogFileName() {
 }
 
 bool OSystem_Win32::detectPortableConfigFile() {
-	// ScummVM operates in a "portable mode" if there is a config file in the
-	// same directory as the executable. In this mode, the executable's
+	// ScummVM BR operates in "portable mode" by default, so it stays isolated
+	// from an original ScummVM installation. In this mode, the executable's
 	// directory is used instead of the user's profile for application files.
-	// This approach is modeled off of the portable mode in Notepad++.
-
-	// Check if there is a config file in the same directory as the executable.
-	TCHAR portableConfigFile[MAX_PATH];
-	Win32::getProcessDirectory(portableConfigFile, MAX_PATH);
-	_tcscat(portableConfigFile, TEXT("\\" DEFAULT_CONFIG_FILE));
-	FILE *file = _tfopen(portableConfigFile, TEXT("r"));
-	if (file == nullptr) {
-		return false;
-	}
-	fclose(file);
+	// The config file is created next to the executable if it doesn't exist
+	// yet; if that directory isn't writable, the user's profile is used
+	// instead (see Win32::getApplicationDataDirectory).
+	TCHAR processDirectory[MAX_PATH];
+	Win32::getProcessDirectory(processDirectory, MAX_PATH);
 
 	// Check if we're running from Program Files on Vista+.
 	// If so then don't attempt to use local files due to UAC.
@@ -422,12 +398,25 @@ bool OSystem_Win32::detectPortableConfigFile() {
 	if (Win32::confirmWindowsVersion(6, 0)) {
 		TCHAR programFiles[MAX_PATH];
 		if (SHGetFolderPathFunc(nullptr, CSIDL_PROGRAM_FILES, nullptr, SHGFP_TYPE_CURRENT, programFiles) == S_OK) {
-			_tcscat(portableConfigFile, TEXT("\\"));
-			if (_tcsstr(portableConfigFile, programFiles) == portableConfigFile) {
+			if (_tcsnicmp(processDirectory, programFiles, _tcslen(programFiles)) == 0) {
 				return false;
 			}
 		}
 	}
+
+	TCHAR portableConfigFile[MAX_PATH];
+	_tcscpy(portableConfigFile, processDirectory);
+	_tcscat(portableConfigFile, TEXT("\\" DEFAULT_CONFIG_FILE));
+	FILE *file = _tfopen(portableConfigFile, TEXT("r"));
+	if (file == nullptr) {
+		// No config file yet: create an empty one, which also confirms
+		// that the executable's directory is writable.
+		file = _tfopen(portableConfigFile, TEXT("a"));
+		if (file == nullptr) {
+			return false;
+		}
+	}
+	fclose(file);
 
 	return true;
 }

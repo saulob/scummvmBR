@@ -39,7 +39,7 @@ namespace Win32 {
  * @return True if the user's profile directory was found, false if
  * it was not.
  *
- * @note if the user's profile directory is found but the "ScummVM"
+ * @note if the user's profile directory is found but the "ScummVMBR"
  * subdirectory can't be created then this function calls error().
  */
 bool getApplicationDataDirectory(TCHAR *profileDirectory);
