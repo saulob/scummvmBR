@@ -99,10 +99,11 @@ Common::Error KyraEngine_v1::init() {
 		if (ScummBR::mountTraducao(ConfMan.get("gameid"), reason)) {
 			_traducaoPtBr = true;
 
-			// Voice and text by default. The player can still turn the voices
-			// off, but not the text.
-			ConfMan.setBool("subtitles", true);
-			ConfMan.setBool("speech_mute", false);
+			// Voice and text on, until the player chooses otherwise
+			if (!ConfMan.hasKey("subtitles"))
+				ConfMan.setBool("subtitles", true);
+			if (!ConfMan.hasKey("speech_mute"))
+				ConfMan.setBool("speech_mute", false);
 		} else {
 			reason += Common::U32String("\n\n");
 			reason += _("The game will run in its original language.");
@@ -627,10 +628,6 @@ void KyraEngine_v1::readSettings() {
 	else
 		_configVoice = 0;   // Text only
 
-	// With the built-in pt-BR translation the text is always shown
-	if (_traducaoPtBr && _configVoice == 1)
-		_configVoice = 2;
-
 	setWalkspeed(_configWalkspeed);
 }
 
@@ -677,8 +674,7 @@ bool KyraEngine_v1::speechEnabled() {
 }
 
 bool KyraEngine_v1::textEnabled() {
-	// With the built-in pt-BR translation the text is always shown
-	return !_flags.isTalkie || _traducaoPtBr || (_configVoice == 0 || _configVoice == 2);
+	return !_flags.isTalkie || (_configVoice == 0 || _configVoice == 2);
 }
 
 int KyraEngine_v1::convertVolumeToMixer(int value) {

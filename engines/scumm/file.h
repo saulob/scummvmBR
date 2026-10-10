@@ -22,7 +22,9 @@
 #ifndef SCUMM_FILE_H
 #define SCUMM_FILE_H
 
+#include "common/archive.h"
 #include "common/file.h"
+#include "common/hashmap.h"
 #include "common/stream.h"
 
 #include "scumm/detection.h"
@@ -171,6 +173,8 @@ private:
 
 	void readIndex(const Common::Path &containerFile, bool isFT);
 
+	friend class PAKClassicArchive; // ScummVMBR
+
 public:
 	ScummPAKFile(const ScummEngine *vm, bool indexFiles = true);
 	~ScummPAKFile() override;
@@ -178,6 +182,30 @@ public:
 	bool openSubFile(const Common::Path &filePath) override;
 	PAKFile *getPAKFileIndex(Common::String fileName);
 	void setPAKFileIndex(Common::String fileName, const PAKFile &pakFile);
+};
+
+/**
+ * ScummVMBR: classic game files inside a DoubleFine PAK file, as an archive
+ * for SearchMan, under the names they have in the classic releases. The
+ * built-in pt-BR translation of Monkey Island 1 is a patch of the classic
+ * files, which the Special Edition only has inside Monkey1.pak.
+ */
+class PAKClassicArchive : public Common::Archive {
+public:
+	PAKClassicArchive(const ScummEngine *vm, const Common::Path &containerFile);
+
+	/** Serves the file @p pakName of the PAK file as @p name, if it is there. */
+	bool addFile(const Common::String &pakName, const Common::Path &name);
+
+	bool hasFile(const Common::Path &path) const override;
+	int listMembers(Common::ArchiveMemberList &list) const override;
+	const Common::ArchiveMemberPtr getMember(const Common::Path &path) const override;
+	Common::SeekableReadStream *createReadStreamForMember(const Common::Path &path) const override;
+
+private:
+	Common::Path _containerFile;
+	ScummPAKFile _pak;
+	Common::HashMap<Common::Path, PAKFile, Common::Path::IgnoreCase_Hash, Common::Path::IgnoreCase_EqualTo> _files;
 };
 
 #endif

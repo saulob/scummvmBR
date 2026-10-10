@@ -453,6 +453,14 @@ void MetaEngine::registerDefaultSettings(const Common::String &) const {
 	}
 }
 
+bool MetaEngine::hasExtraGuiOption(const Common::String &target, const char *configOption) const {
+	for (const ExtraGuiOption &option : getExtraGuiOptions(target)) {
+		if (!strcmp(option.configOption, configOption))
+			return true;
+	}
+	return false;
+}
+
 GUI::OptionsContainerWidget *MetaEngine::buildEngineOptionsWidget(GUI::GuiObject *boss, const Common::String &name, const Common::String &target) const {
 	const ExtraGuiOptions engineOptions = getExtraGuiOptions(target);
 	if (engineOptions.empty()) {

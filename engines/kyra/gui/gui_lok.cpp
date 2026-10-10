@@ -1130,9 +1130,6 @@ int GUI_LoK::controlsChangeVoice(Button *button) {
 	updateMenuButton(button);
 
 	_vm->_configVoice = (_vm->_configVoice + 1) % 3;
-	// With the built-in pt-BR translation the text stays on: no "Voice only"
-	if (_vm->traducaoPtBr() && _vm->_configVoice == 1)
-		_vm->_configVoice = 2;
 	setupControls(_menu[5]);
 	return 0;
 }

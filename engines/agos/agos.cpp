@@ -734,6 +734,12 @@ Common::Error AGOSEngine::init() {
 		if (ScummBR::mountTraducao(_gameDescription->desc.gameId, reason)) {
 			_language = Common::PT_BRA;
 			_traducaoPtBr = true;
+
+			// Speech and text on, until the player chooses otherwise
+			if (!ConfMan.hasKey("subtitles"))
+				ConfMan.setBool("subtitles", true);
+			if (!ConfMan.hasKey("speech_mute"))
+				ConfMan.setBool("speech_mute", false);
 		} else {
 			reason += Common::U32String("\n\n");
 			reason += _("The game will run in its original language.");

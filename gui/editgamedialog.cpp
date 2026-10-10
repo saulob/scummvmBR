@@ -153,6 +153,15 @@ EditGameDialog::EditGameDialog(const Common::String &domain)
 
 	if (enginePlugin) {
 		enginePlugin->get<MetaEngine>().registerDefaultSettings(_domain);
+
+		// ScummVMBR: a game with the built-in pt-BR translation starts with
+		// voice and text on, in its audio options. The player can change it.
+		if (enginePlugin->get<MetaEngine>().hasExtraGuiOption(_domain, "traducao_ptbr") &&
+				ConfMan.getBool("traducao_ptbr", _domain) && !ConfMan.hasKey("subtitles", _domain)) {
+			ConfMan.setBool("subtitles", true, _domain);
+			ConfMan.setBool("speech_mute", false, _domain);
+		}
+
 		_engineOptions = enginePlugin->get<MetaEngine>().buildEngineOptionsWidget(_gameContainer, "GameOptions_Game_Container.Container", _domain);
 
 		if (_engineOptions) {

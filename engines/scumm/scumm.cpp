@@ -127,6 +127,11 @@ namespace Scumm {
 // Use g_scumm from error() ONLY
 ScummEngine *g_scumm = nullptr;
 
+// ScummVMBR: the classic files of Monkey Island 1 SE in SearchMan, under the
+// built-in translation (engines/traducoes.cpp) and above the game directory
+static const char *const kMonkeySEClassicArchive = "monkey1pak";
+static const int kMonkeySEClassicArchivePriority = 5;
+
 
 struct dbgChannelDesc {
 	const char *channel, *desc;
@@ -572,8 +577,10 @@ ScummEngine::~ScummEngine() {
 	delete _res;
 	delete _gdi;
 
-	if (_traducaoPtBr)
+	if (_traducaoPtBr) {
 		ScummBR::unmountTraducao();
+		SearchMan.remove(kMonkeySEClassicArchive);
+	}
 }
 
 
@@ -1040,16 +1047,42 @@ Common::Error ScummEngine::init() {
 	// for (the ones that show it); the game files are checked here anyway.
 	if (isTraducaoPtBrEdition(_game.gameid, ConfMan.get("extra"), ConfMan.get("language")) &&
 			ConfMan.getBool("traducao_ptbr")) {
+		// The Monkey Island 1 translation patches the classic files, which
+		// the Special Edition only has inside Monkey1.pak: they are served
+		// from there, with the names of the classic CD release.
+		const bool monkeySE = _game.id == GID_MONKEY && (_game.features & GF_DOUBLEFINE_PAK);
+		if (monkeySE) {
+			PAKClassicArchive *pak = new PAKClassicArchive(this, Common::Path(_filenamePattern.pattern));
+			pak->addFile("monkey1.000", "MONKEY.000");
+			pak->addFile("monkey1.001", "MONKEY.001");
+			SearchMan.add(kMonkeySEClassicArchive, pak, kMonkeySEClassicArchivePriority);
+		}
+
 		Common::U32String reason;
 		if (ScummBR::mountTraducao(_game.gameid, reason)) {
 			_traducaoPtBr = true;
 
-			// Voice and text by default, for the games with voices. The
-			// player can still turn the voices off, but not the text.
-			ConfMan.setBool("subtitles", true);
-			ConfMan.setBool("speech_mute", false);
-			_v5VoiceMode = 1;
+			// The translated Monkey Island 1 is the Ultimate Talkie Edition
+			// (no voices yet), so it runs as one. The Special Edition then
+			// reads the translated MONKEY.000/001 instead of Monkey1.pak.
+			if (_game.id == GID_MONKEY) {
+				_game.features |= GF_ULTIMATE_TALKIE;
+				if (monkeySE) {
+					_game.features &= ~GF_DOUBLEFINE_PAK;
+					_filenamePattern.pattern = "monkey.%03d";
+					_filenamePattern.genMethod = kGenDiskNum;
+				}
+			}
+
+			// Voice and text on, until the player chooses otherwise
+			if (!ConfMan.hasKey("subtitles"))
+				ConfMan.setBool("subtitles", true);
+			if (!ConfMan.hasKey("speech_mute"))
+				ConfMan.setBool("speech_mute", false);
+			_v5VoiceMode = ConfMan.getBool("speech_mute") ? 2 : ConfMan.getBool("subtitles") ? 1 : 0;
 		} else {
+			if (monkeySE)
+				SearchMan.remove(kMonkeySEClassicArchive);
 			reason += Common::U32String("\n\n");
 			reason += _("The game will run in its original language.");
 			GUI::MessageDialog dialog(reason);
@@ -2699,10 +2732,6 @@ void ScummEngine::syncSoundSettings() {
 		_musicEngine->setMusicVolume(soundVolumeMusic);
 		_musicEngine->setSfxVolume(soundVolumeSfx);
 	}
-
-	// With the built-in pt-BR translation the text is always shown.
-	if (_traducaoPtBr && !ConfMan.getBool("subtitles"))
-		ConfMan.setBool("subtitles", true);
 
 	if (ConfMan.getBool("speech_mute"))
 		_voiceMode = 2;

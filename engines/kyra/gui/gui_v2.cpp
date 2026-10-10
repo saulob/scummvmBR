@@ -569,10 +569,6 @@ int GUI_v2::toggleWalkspeed(Button *caller) {
 int GUI_v2::toggleText(Button *caller) {
 	updateMenuButton(caller);
 
-	// With the built-in pt-BR translation the text stays on
-	if (_vm->traducaoPtBr())
-		return 0;
-
 	if (_vm->textEnabled()) {
 		if (_vm->speechEnabled())
 			_vm->_configVoice = 1;

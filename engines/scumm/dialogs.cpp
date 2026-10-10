@@ -1000,11 +1000,8 @@ void SubtitleSettingsDialog::cycleValue() {
 	};
 
 	_value += 1;
-	if (_value > 2) {
-		// With the built-in pt-BR translation the text stays on, so
-		// there is no "Speech Only".
-		_value = _vm->hasTraducaoPtBr() ? 1 : 0;
-	}
+	if (_value > 2)
+		_value = 0;
 
 	if (_value == 1 && g_system->getOverlayWidth() <= 320)
 		setInfoText(_c("Speech & Subs", "lowres"));
@@ -1732,6 +1729,13 @@ MI1CdGameOptionsWidget::MI1CdGameOptionsWidget(GuiObject *boss, const Common::St
 	_enableTTSCheckbox = createEnableTTSCheckbox(widgetsBoss(), "MI1CdGameOptionsDialog.EnableTTS");
 #endif
 
+	// ScummVMBR: this widget replaces the generic list of engine options, so
+	// the built-in pt-BR translation has to be added here too
+	if (hasTraducaoPtBrOption())
+		_traducaoPtBrCheckbox = new GUI::CheckboxWidget(widgetsBoss(), "MI1CdGameOptionsDialog.TraducaoPtBr",
+			_("Translate the game into Brazilian Portuguese"),
+			_("Uses the Brazilian Portuguese translation built into ScummVMBR. The game files are not changed."));
+
 	if (platform == Common::kPlatformSegaCD)
 		_enableSegaShadowModeCheckbox = createSegaShadowModeCheckbox(widgetsBoss(), "MI1CdGameOptionsDialog.EnableSegaShadowMode");
 
@@ -1798,6 +1802,13 @@ void MI1CdGameOptionsWidget::load() {
 #ifdef USE_TTS
 	_enableTTSCheckbox->setState(ConfMan.getBool("tts_enabled", _domain));
 #endif
+	// On by default, like in ScummMetaEngine::getExtraGuiOptions()
+	if (_traducaoPtBrCheckbox)
+		_traducaoPtBrCheckbox->setState(!ConfMan.hasKey("traducao_ptbr", _domain) || ConfMan.getBool("traducao_ptbr", _domain));
+}
+
+bool MI1CdGameOptionsWidget::hasTraducaoPtBrOption() const {
+	return isTraducaoPtBrEdition(ConfMan.get("gameid", _domain), ConfMan.get("extra", _domain), ConfMan.get("language", _domain));
 }
 
 bool MI1CdGameOptionsWidget::save() {
@@ -1815,6 +1826,8 @@ bool MI1CdGameOptionsWidget::save() {
 #ifdef USE_TTS
 	ConfMan.setBool("tts_enabled", _enableTTSCheckbox->getState(), _domain);
 #endif
+	if (_traducaoPtBrCheckbox)
+		ConfMan.setBool("traducao_ptbr", _traducaoPtBrCheckbox->getState(), _domain);
 	return true;
 }
 
@@ -1825,8 +1838,13 @@ void MI1CdGameOptionsWidget::defineLayout(GUI::ThemeEval &layouts, const Common:
 		.addLayout(GUI::ThemeLayout::kLayoutVertical, 5)
 			.addPadding(0, 0, 0, 0)
 			.addLayout(GUI::ThemeLayout::kLayoutVertical, 4)
-				.addPadding(0, 0, 10, 0)
-				.addWidget("EnableOriginalGUI", "Checkbox");
+				.addPadding(0, 0, 10, 0);
+
+	// ScummVMBR: first, where it stands out
+	if (hasTraducaoPtBrOption())
+		layouts.addWidget("TraducaoPtBr", "Checkbox");
+
+	layouts.addWidget("EnableOriginalGUI", "Checkbox");
 
 	if (platform == Common::kPlatformSegaCD)
 		layouts.addWidget("EnableSegaShadowMode", "Checkbox");

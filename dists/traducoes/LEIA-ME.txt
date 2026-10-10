@@ -17,9 +17,10 @@ A traducao e aplicada na memoria, toda vez que o jogo abre. Os arquivos do
 jogo continuam os originais; desmarcar a opcao volta ao ingles. Nao precisa
 rodar nenhum programa nem baixar nada a parte.
 
-Com a traducao, o jogo abre com o video do ScummBR (Esc pula). Nos jogos
-SCUMM e no Kyrandia, o texto fica sempre ligado: o padrao e voz e texto nos
-jogos com voz, e o jogador pode tirar a voz, mas nao o texto.
+Com a traducao, o jogo abre com o video do ScummBR (Esc pula). Ao adicionar
+o jogo, na aba Audio, "Texto e fala" ja vem em "Ambos" (voz e texto). Depois
+disso, o jogador muda como quiser, como em qualquer jogo. Nos jogos sem voz,
+fica so o texto.
 
 JOGOS
 -----
@@ -38,9 +39,18 @@ loom      Loom, VGA com vozes (CD) em ingles (GOG)
 samnmax   Sam & Max Hit the Road, CD em ingles (GOG)
 kyra1     The Legend of Kyrandia, CD em ingles (GOG), pasta DAT
 kyra2     The Legend of Kyrandia: Hand of Fate, CD em ingles (GOG)
+monkey    The Secret of Monkey Island, os arquivos classicos em ingles: o
+          Monkey1.pak da Special Edition (GOG), ou o MONKEY.000/001 soltos
+          (o CD original, ou extraidos da Special Edition)
           Traducoes do Grupo ScummBR de Traducao (scummbr.org), feitas sobre
           essas edicoes. Os creditos completos estao nos LEIA-ME de cada
           patch original.
+
+No Monkey Island 1, a traducao foi feita sobre a Ultimate Talkie Edition
+v1.02 (a versao com vozes feita por fas em cima da Special Edition), entao o
+jogo traduzido roda como ela. Por enquanto vai so o texto: as vozes ficam no
+monkey.sog, que nao vai no ScummVMBR. Com a Special Edition, o ScummVMBR le
+os arquivos classicos de dentro do Monkey1.pak; nao precisa extrair nada.
 
 No Kyrandia, a traducao sao arquivos soltos que o jogo le antes dos pacotes
 (.PAK): eles vao como "arquivos novos". Os textos do kyra.dat (nomes de
@@ -67,6 +77,7 @@ Com o jogo original numa pasta e o ja traduzido em outra:
      ... ING PTBR dists/traducoes/indy3 *.lfl
      ... ING PTBR dists/traducoes/loom 000.lfl 902.lfl disk01.lec
      ... ING PTBR dists/traducoes/samnmax samnmax.000 samnmax.001
+     ... ING PTBR dists/traducoes/monkey MONKEY.000 MONKEY.001
      ... ING/DAT PTBR/DAT dists/traducoes/kyra1 *.emc *.cps *.wsa *.fnt credits.txt kyra.dat
      ... ING PTBR dists/traducoes/kyra2 *.emc *.fmc *.gmc *.dle *.eng *.cps *.wsa *.fnt *.csh kyra.dat
    Um arquivo que so existe na pasta traduzida vira "arquivo novo". O

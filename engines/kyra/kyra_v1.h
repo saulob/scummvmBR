@@ -163,7 +163,6 @@ public:
 	bool textEnabled();
 	// ScummVMBR: the built-in pt-BR translation is applied. The text is then
 	// always shown, so "Voice only" turns into "Voice & Text".
-	bool traducaoPtBr() const { return _traducaoPtBr; }
 
 	enum kVolumeEntry {
 		kVolumeMusic = 0,

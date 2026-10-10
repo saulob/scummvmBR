@@ -23,6 +23,7 @@
 #include "scumm/scumm.h"
 
 #include "common/macresman.h"
+#include "common/substream.h"
 
 namespace Scumm {
 
@@ -318,6 +319,55 @@ void ScummPAKFile::setPAKFileIndex(Common::String fileName, const PAKFile &pakFi
 	fileName.toLowercase();
 
 	_pakIndex[fileName] = pakFile;
+}
+
+#pragma mark -
+#pragma mark--- PAKClassicArchive ---
+#pragma mark -
+
+PAKClassicArchive::PAKClassicArchive(const ScummEngine *vm, const Common::Path &containerFile)
+	: _containerFile(containerFile), _pak(vm, false) {
+	_pak.readIndex(containerFile, false);
+}
+
+bool PAKClassicArchive::addFile(const Common::String &pakName, const Common::Path &name) {
+	Common::String fileName = pakName;
+	fileName.toLowercase();
+
+	if (!_pak._pakIndex.contains(fileName))
+		return false;
+
+	_files[name] = _pak._pakIndex[fileName];
+	return true;
+}
+
+bool PAKClassicArchive::hasFile(const Common::Path &path) const {
+	return _files.contains(path);
+}
+
+int PAKClassicArchive::listMembers(Common::ArchiveMemberList &list) const {
+	for (const auto &file : _files)
+		list.push_back(Common::ArchiveMemberPtr(new Common::GenericArchiveMember(file._key, *this)));
+	return _files.size();
+}
+
+const Common::ArchiveMemberPtr PAKClassicArchive::getMember(const Common::Path &path) const {
+	if (!hasFile(path))
+		return Common::ArchiveMemberPtr();
+	return Common::ArchiveMemberPtr(new Common::GenericArchiveMember(path, *this));
+}
+
+Common::SeekableReadStream *PAKClassicArchive::createReadStreamForMember(const Common::Path &path) const {
+	if (!_files.contains(path))
+		return nullptr;
+
+	Common::SeekableReadStream *container = SearchMan.createReadStreamForMember(_containerFile);
+	if (!container)
+		return nullptr;
+
+	// Monkey1.pak is well under 4 GB
+	const PAKFile &file = _files.getVal(path);
+	return new Common::SeekableSubReadStream(container, (uint32)file.start, (uint32)(file.start + file.len), DisposeAfterUse::YES);
 }
 
 } // End of namespace Scumm

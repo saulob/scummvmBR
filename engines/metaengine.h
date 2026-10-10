@@ -411,6 +411,12 @@ public:
 	virtual GUI::OptionsContainerWidget *buildEngineOptionsWidget(GUI::GuiObject *boss, const Common::String &name, const Common::String &target) const;
 
 	/**
+	 * ScummVMBR: whether the target shows the engine GUI option with the
+	 * given config key (for example "traducao_ptbr").
+	 */
+	bool hasExtraGuiOption(const Common::String &target, const char *configOption) const;
+
+	/**
 	 * MetaEngine feature flags.
 	 *
 	 * A feature in this context means an ability of the engine that can be

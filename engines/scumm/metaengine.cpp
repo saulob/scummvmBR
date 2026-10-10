@@ -988,14 +988,18 @@ static const ExtraGuiOption traducaoPtBr = {
 };
 
 // The editions the built-in pt-BR translations were made for: the English
-// GOG releases. ScummEngine::init() still checks the game files.
+// GOG releases. ScummEngine::init() still checks the game files. Monkey
+// Island 1 takes the classic files, loose (the CD release, or extracted from
+// the Special Edition) or inside the Special Edition's Monkey1.pak.
 bool Scumm::isTraducaoPtBrEdition(const Common::String &gameid, const Common::String &extra, const Common::String &language) {
 	static const char *const editions[][2] = {
 		{ "tentacle", "CD" },
 		{ "atlantis", "CD" },
 		{ "indy3", "VGA" },
 		{ "loom", "VGA" },
-		{ "samnmax", "CD" }
+		{ "samnmax", "CD" },
+		{ "monkey", "CD" },
+		{ "monkey", "SE" }
 	};
 
 	if (language != "en")

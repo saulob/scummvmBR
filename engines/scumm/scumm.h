@@ -692,7 +692,6 @@ public:
 	void restart();
 	bool isUsingOriginalGUI() const;
 	bool isMessageBannerActive(); // For Indy4 Jap character shadows
-	bool hasTraducaoPtBr() const { return _traducaoPtBr; }
 
 	bool _isIndy4Jap = false;
 

@@ -2884,8 +2884,7 @@ void ScummEngine_v7::o6_kernelSetFunctions() {
 		_saveSound = args[1];
 		break;
 	case 215:
-		// The built-in pt-BR translation keeps the text on
-		ConfMan.setBool("subtitles", args[1] != 0 || _traducaoPtBr);
+		ConfMan.setBool("subtitles", args[1] != 0);
 		break;
 	default:
 		error("o6_kernelSetFunctions: default case %d (param count %d)", args[0], num);

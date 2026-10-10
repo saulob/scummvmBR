@@ -399,6 +399,9 @@ private:
 #ifdef USE_TTS
 	GUI::CheckboxWidget *_enableTTSCheckbox = nullptr;
 #endif
+	// ScummVMBR: the built-in pt-BR translation, only for the edition it was made for
+	GUI::CheckboxWidget *_traducaoPtBrCheckbox = nullptr;
+	bool hasTraducaoPtBrOption() const;
 
 	GUI::SliderWidget *_introAdjustmentSlider = nullptr;
 	GUI::StaticTextWidget *_introAdjustmentValue = nullptr;
