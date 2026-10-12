@@ -1326,11 +1326,65 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 	if (_language == Common::HE_ISR)
 		dst += width - 1; // For Hebrew, start at the right edge, not the left.
 
+	// pt-BR: linhas com maiuscula acentuada precisam de espaco livre em cima
+	// para o acento. Em vez de descer so a letra acentuada (o que desalinhava
+	// a linha base: "AAEE" com e sem acento ficavam em alturas diferentes),
+	// descemos a linha INTEIRA o mesmo tanto.
+	const bool ptSimon = (getGameType() == GType_SIMON1 || getGameType() == GType_SIMON2);
+	auto ptLineShift = [&](const char *s) -> uint {
+		uint shift = 0;
+		if (!ptSimon)
+			return 0;
+		for (; *s != 0 && *s != 10; s++) {
+			const uint code = (byte)*s;
+			if (code < kPtBrFirst || code > kPtBrLast)
+				continue;
+			const byte mark = kPtBrMarks[code - kPtBrFirst];
+			if (mark == kPtBrNone || mark == kPtBrCedilla)
+				continue;
+			const char base = kPtBrBases[code - kPtBrFirst];
+			const byte *h = src + 48 + (base - ' ') * 4;
+			uint ih = h[2];
+			const uint iw = h[3];
+			const byte *im = src + READ_LE_UINT16(h);
+			if (iw == 0 || ih == 0)
+				continue;
+			uint rowOff = 0;
+			if (base == 'i' && ih > 2) {
+				im += 2 * iw;
+				ih -= 2;
+				rowOff = 2;
+			}
+			uint top;
+			for (top = 0; top < ih; top++) {
+				uint k;
+				for (k = 0; k != iw; k++)
+					if (im[top * iw + k])
+						break;
+				if (k != iw)
+					break;
+			}
+			top += rowOff;
+			const uint precisa = (getGameType() == GType_SIMON1)
+				? (uint)kPtBrS1MarkH : (uint)(kPtBrMarkTo[mark] - kPtBrMarkFrom[mark]);
+			uint need = (precisa > top) ? precisa - top : 0;
+			const uint full = ih + rowOff;
+			const uint cabe = (full < (uint)textHeight) ? (uint)textHeight - full : 0;
+			if (need > cabe)
+				need = cabe;
+			if (need > shift)
+				shift = need;
+		}
+		return shift;
+	};
+	uint lineShift = ptLineShift(txt);
+
 	dst_org = dst;
 	while ((chr = *txt++) != 0) {
 		if (chr == 10) {
 			dst_org += width * textHeight;
 			dst = dst_org;
+			lineShift = ptLineShift(txt);
 		} else if ((chr -= ' ') == 0) {
 			dst += (_language == Common::HE_ISR ? -6 : 6); // Hebrew moves to the left, all others to the right
 		} else {
@@ -1366,9 +1420,12 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 			// O 'i' minusculo desta fonte tem o pingo colado na haste (linhas 0
 			// e 1). Com acento em cima, o pingo sobraria junto do acento, entao
 			// descartamos essas duas linhas da imagem da letra.
+			// A haste continua na mesma linha base: so o pingo some.
+			uint ptRowOff = 0;
 			if (ptBase == 'i' && ptMark != kPtBrNone && ptMark != kPtBrCedilla && img_height > 2) {
 				img += 2 * img_width;
 				img_height -= 2;
+				ptRowOff = 2;
 			}
 
 			if (_language == Common::HE_ISR)
@@ -1385,7 +1442,8 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 
 			// Onde a tinta da letra base comeca e acaba: e nesse espaco livre
 			// que o acento cabe sem encostar nela.
-			uint ptTop = 0, ptBottom = 0, ptShift = 0;
+			// ptShift = descida da linha toda + linhas do pingo descartado.
+			uint ptTop = 0, ptBottom = 0, ptShift = lineShift + ptRowOff;
 			const byte *mk_img = nullptr;
 			uint mk_w = 0, mk_h = 0, mk_top = 0, mk_bottom = 0;
 
@@ -1424,31 +1482,20 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 				}
 				if (mk_w == 0 || mk_h < mk_bottom) {
 					mk_img = nullptr;   // fonte sem esse glifo: desenha so a letra
-				} else if (ptMark != kPtBrCedilla) {
-					// Se o acento nao cabe acima da letra, a letra desce o que
-					// faltar - e o caso das maiusculas, que ocupam o topo todo.
-					// Mas a letra NUNCA e cortada: o deslocamento para onde ela
-					// ainda couber inteira na linha de texto. Quem encolhe,
-					// quando falta espaco, e o acento (ver ptEspaco adiante).
-					const uint precisa = mk_bottom - mk_top;
-					if (ptTop < precisa) {
-						ptShift = precisa - ptTop;
-						const uint cabe = (img_height < (uint)textHeight)
-							? (uint)textHeight - img_height : 0;
-						if (ptShift > cabe)
-							ptShift = cabe;
-					}
-					cur_dst += ptShift * width;
 				}
 			}
 
+			// Descida da linha (calculada em ptLineShift): vale para TODAS as
+			// letras, acentuadas ou nao, para manterem a mesma linha base.
+			cur_dst += ptShift * width;
+
 			{
-				// Com a letra deslocada para baixo (maiusculas acentuadas), as
-				// ultimas linhas poderiam invadir a linha de texto seguinte.
+				// Com a letra deslocada para baixo, as ultimas linhas poderiam
+				// invadir a linha de texto seguinte.
 				uint ptRows = img_height;
 				if (ptShift != 0 && ptShift + img_height > (uint)textHeight)
-					ptRows = (uint)textHeight - ptShift;
-				do {
+					ptRows = (ptShift < (uint)textHeight) ? (uint)textHeight - ptShift : 0;
+				while (ptRows--) {
 					for (i = 0; i != img_width; i++) {
 						chr = *img++;
 						if (chr) {
@@ -1460,7 +1507,7 @@ void AGOSEngine::renderString(uint vgaSpriteId, uint color, uint width, uint hei
 						}
 					}
 					cur_dst += width;
-				} while (--ptRows);
+				}
 			}
 
 			if (mk_img != nullptr) {
