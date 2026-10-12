@@ -274,8 +274,12 @@ DetectedGames AdvancedMetaEngineDetectionBase::detectGames(const Common::FSList 
 	for (uint i = 0; i < matches.size(); i++) {
 		DetectedGame game = toDetectedGame(matches[i]);
 
+		// [DEBUG_SAULO] LIBERADO NOS TESTES (todos os jogos/engines): variantes desconhecidas
+		// (ex.: jogos traduzidos com hash diferente) podem ser adicionadas mesmo sem bater com
+		// a tabela de deteccao. Antes: canBeAdded = false. REMOVER antes do release.
 		if (game.hasUnknownFiles && !(_flags & kADFlagCanPlayUnknownVariants)) {
-			game.canBeAdded = false;
+			warning("[DEBUG_SAULO] '%s' e variante desconhecida; adicao LIBERADA NOS TESTES (bypass da validacao)",
+			        game.gameId.c_str());
 		}
 
 		detectedGames.push_back(game);
@@ -409,7 +413,11 @@ Common::Error AdvancedMetaEngineDetectionBase::identifyGame(DetectedGame &game, 
 
 	ADDetectedGame agdDesc;
 	for (uint i = 0; i < matches.size(); i++) {
-		if (matches[i].desc->gameId == gameid && (!matches[i].hasUnknownFiles || (_flags & kADFlagCanPlayUnknownVariants))) {
+		if (matches[i].desc->gameId == gameid) {
+			// [DEBUG_SAULO] LIBERADO NOS TESTES: aceita variante desconhecida (antes exigia
+			// !hasUnknownFiles ou kADFlagCanPlayUnknownVariants). REMOVER antes do release.
+			if (matches[i].hasUnknownFiles && !(_flags & kADFlagCanPlayUnknownVariants))
+				warning("[DEBUG_SAULO] '%s' rodando como variante desconhecida (bypass da validacao nos testes)", gameid.c_str());
 			agdDesc = matches[i];
 			break;
 		}
